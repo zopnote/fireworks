@@ -1,0 +1,10 @@
+/out
+/.idea/
+__pycache__
+/bin/pubspec.lock
+/bin/.dart_tool/
+/bin/ui/.dart_tool/
+/bin/ui/build/
+/bin/ui/pubspec.lock
+/bin/ui/.flutter-plugins-dependencies
+/bin/ui/.flutter-plugins
