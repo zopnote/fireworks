@@ -8,3 +8,5 @@ __pycache__
 /bin/ui/pubspec.lock
 /bin/ui/.flutter-plugins-dependencies
 /bin/ui/.flutter-plugins
+/.out/
+/cmake-build/
