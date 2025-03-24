@@ -68,7 +68,7 @@ set(OUT_DOCUMENTATION_DIRECTORY docs)
 set(OUT_LIBRARY_DIRECTORY lib)
 set(OUT_INCLUDE_DIRECTORY include)
 
-set(OUT_RUNTIME_DIRECTORY runtime)
+set(OUT_RUNTIME_DIRECTORY engine/runtime)
 set(OUT_UNIT_RUNTIME_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/unit)
 set(OUT_CONFIG_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/config)
 set(OUT_SCRIPTS_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/scripts)
@@ -77,6 +77,4 @@ set(OUT_TEMPLATES_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/templates)
 
 # -----------------------------------------------------------------------------
 
-add_subdirectory(packages/fireworks)
-add_subdirectory(interface/app)
 add_subdirectory(engine)
