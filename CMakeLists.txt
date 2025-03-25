@@ -8,6 +8,10 @@ project(
         VERSION 0.1
         LANGUAGES C CXX
 )
+
+add_custom_target(sdk
+        DEPENDS interface
+)
 # -----------------------------------------------------------------------------
 
 
@@ -55,26 +59,31 @@ set(CMAKE_INSTALL_PREFIX
 # -----------------------------------------------------------------------------
 
 # The binary and internal paths are hard coded in the program
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-    set(OUT_BINARY_DIRECTORY .)
-else()
-    set(OUT_BINARY_DIRECTORY bin)
-endif()
+set(OUT_BINARY_DIRECTORY bin)
 
-set(OUT_INTERNAL_DIRECTORY ${OUT_BINARY_DIRECTORY}/internal)
-set(OUT_CACHE_DIRECTORY ${OUT_BINARY_DIRECTORY}/cache)
+set(OUT_ENGINE_DIR engine)
+set(OUT_ENGINE_RT_DIR ${OUT_ENGINE_DIR}/runtime)
+set(OUT_ENGINE_RT_HEADER_DIR ${OUT_ENGINE_RT_DIR}/include)
+set(OUT_ENGINE_UI_DIR ${OUT_ENGINE_DIR}/interface)
 
-set(OUT_DOCUMENTATION_DIRECTORY docs)
-set(OUT_LIBRARY_DIRECTORY lib)
-set(OUT_INCLUDE_DIRECTORY include)
+set(OUT_PACKAGES_DIR packages)
+set(OUT_RUNNER_BIN_DIR ${OUT_BINARY_DIRECTORY})
+set(OUT_RUNNER_TOOLS_BIN_DIR ${OUT_RUNTIME_DIRECTORY}/runner)
 
-set(OUT_RUNTIME_DIRECTORY engine/runtime)
-set(OUT_UNIT_RUNTIME_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/unit)
-set(OUT_CONFIG_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/config)
-set(OUT_SCRIPTS_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/scripts)
-set(OUT_RESOURCE_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/resources)
-set(OUT_TEMPLATES_DIRECTORY ${OUT_RUNTIME_DIRECTORY}/templates)
 
 # -----------------------------------------------------------------------------
 
-add_subdirectory(engine)
+
+# Subcomponents of the sdk
+# -----------------------------------------------------------------------------
+add_subdirectory(engine/runtime)
+add_subdirectory(engine/interface)
+add_subdirectory(packages)
+add_subdirectory(runner)
+# -----------------------------------------------------------------------------
+
+
+# Vendor scripts and targets
+# -----------------------------------------------------------------------------
+include(engine/runtime/vendor/libyaml.cmake)
+# -----------------------------------------------------------------------------

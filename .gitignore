@@ -10,3 +10,4 @@ __pycache__
 /bin/ui/.flutter-plugins
 /.out/
 /cmake-build/
+/cmake-out/
