@@ -1,5 +1,5 @@
 # Dual Licensing Agreement
-Copyright (c) 2024 Lenny Siebert
+Copyright (c) 2025 Lenny Siebert
 
 ## Open-Source License: GNU General Public License v3 (GPLv3)
 
