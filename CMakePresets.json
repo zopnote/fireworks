@@ -19,6 +19,23 @@
       }
     },
     {
+      "name": "win-clang-msvc-arm64",
+      "description": "Ensure to have the Visual Studio Cross Compiler for arm installed.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/win-msvc-arm64",
+      "installDir": "${sourceDir}/cmake-out/win-msvc-arm64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "arm64",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_SYSTEM_PROCESSOR": "ARM64",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_FLAGS": "--target=arm64-windows-msvc",
+        "CMAKE_CXX_FLAGS": "--target=arm64-windows-msvc",
+        "CMAKE_SHARED_LIB_SUFFIX": ".dll"
+      }
+    },
+    {
       "name": "wsl-gnu-x86_64",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/cmake-build/wsl-gnu-x86_64",
@@ -78,6 +95,17 @@
         "CMAKE_CXX_COMPILER": "arm-linux-gnueabihf-g++",
         "CMAKE_SYSTEM_NAME": "Unix",
         "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "emscripten-wasm",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/emscripten-wasm",
+      "installDir": "${sourceDir}/cmake-out/emscripten-wasm",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Emscripten",
+        "CMAKE_ARCH_NAME": "wasm",
+        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
       }
     },
     {

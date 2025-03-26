@@ -17,10 +17,14 @@ endmacro()
 include(vendor/libyaml.cmake)
 include(modules/core/core.cmake)
 
-add_library(runtime SHARED ${RT_SOURCES})
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
+    add_library(runtime STATIC ${RT_SOURCES})
+else ()
+    add_library(runtime SHARED ${RT_SOURCES})
+endif ()
 target_precompile_headers(runtime PRIVATE global/stdpch.h)
 target_include_directories(runtime PUBLIC ${RT_INCLUDE_DIRS})
-target_link_libraries(runtime PUBLIC libyaml)
+target_link_libraries(runtime PUBLIC yaml)
 install(TARGETS runtime DESTINATION ${OUT_ENGINE_RT_DIR})
 
 

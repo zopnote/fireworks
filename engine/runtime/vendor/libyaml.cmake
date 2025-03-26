@@ -18,7 +18,7 @@ if (NOT EXISTS ${YAML_DIRECTORY})
     add_custom_target(vendor_yaml_clone
             COMMAND git clone https://github.com/zopnote/libyaml.git ${YAML_DIRECTORY} || true
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/_deps
-            COMMENT "Cloning libyaml repository"
+            COMMENT "Cloning yaml repository"
     )
 
     add_custom_command(
@@ -27,27 +27,30 @@ if (NOT EXISTS ${YAML_DIRECTORY})
             DEPENDS vendor_yaml_clone
     )
 endif ()
-
-add_library(libyaml SHARED ${YAML_SOURCE_FILES})
-
-if (NOT EXISTS ${YAML_DIRECTORY})
-    add_dependencies(libyaml vendor_yaml_clone)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
+    add_library(yaml STATIC ${YAML_SOURCE_FILES})
+else ()
+    add_library(yaml SHARED ${YAML_SOURCE_FILES})
 endif ()
 
-target_compile_definitions(libyaml
+if (NOT EXISTS ${YAML_DIRECTORY})
+    add_dependencies(yaml vendor_yaml_clone)
+endif ()
+
+target_compile_definitions(yaml
         PRIVATE HAVE_CONFIG_H
         PUBLIC
         $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:YAML_DECLARE_STATIC>
         $<$<BOOL:${MSVC}>:_CRT_SECURE_NO_WARNINGS>
 )
 
-set_target_properties(libyaml
+set_target_properties(yaml
         PROPERTIES DEFINE_SYMBOL YAML_DECLARE_EXPORT
 )
 
-target_include_directories(libyaml PUBLIC ${YAML_DIRECTORY}/include)
+target_include_directories(yaml PUBLIC ${YAML_DIRECTORY}/include)
 
-install(TARGETS libyaml
+install(TARGETS yaml
         RUNTIME DESTINATION ${OUT_ENGINE_RT_DIR}
 )
 
