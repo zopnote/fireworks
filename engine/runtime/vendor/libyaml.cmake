@@ -51,7 +51,3 @@ install(TARGETS libyaml
         RUNTIME DESTINATION ${OUT_ENGINE_RT_DIR}
 )
 
-include(build/toolchains/cross_compile_android.cmake)
-compile_android(libyaml 21 "arm64")
-compile_android(libyaml 21 "x86")
-compile_android(libyaml 21 "x86_64")

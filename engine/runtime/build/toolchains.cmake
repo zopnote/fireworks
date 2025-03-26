@@ -1,1 +1,0 @@
-include(toolchains/cross_compile_android.cmake)

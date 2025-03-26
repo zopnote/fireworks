@@ -1,0 +1,173 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21
+  },
+  "configurePresets": [
+    {
+      "name": "win-clang-x86_64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/win-clang-x86_64",
+      "installDir": "${sourceDir}/cmake-out/win-clang-x86_64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "x86_64",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_SHARED_LIB_SUFFIX": ".dll"
+      }
+    },
+    {
+      "name": "wsl-gnu-x86_64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/wsl-gnu-x86_64",
+      "installDir": "${sourceDir}/cmake-out/wsl-gnu-x86_64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "x86_64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_SYSTEM_NAME": "Unix",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      },
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "wsl"
+        }
+      }
+    },
+    {
+      "name": "wsl-gnu-arm64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/wsl-gnu-arm64",
+      "installDir": "${sourceDir}/cmake-out/wsl-gnu-arm64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "arm64",
+        "CMAKE_C_COMPILER": "arm-linux-gnueabihf-gcc",
+        "CMAKE_CXX_COMPILER": "arm-linux-gnueabihf-g++",
+        "CMAKE_SYSTEM_NAME": "Unix",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      },
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "wsl"
+        }
+      }
+    },
+    {
+      "name": "linux-gnu-x86_64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/linux-gnu-x86_64",
+      "installDir": "${sourceDir}/cmake-out/linux-gnu-x86_64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "x86_64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_SYSTEM_NAME": "Unix",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "linux-gnu-arm64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/linux-gnu-arm64",
+      "installDir": "${sourceDir}/cmake-out/linux-gnu-arm64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "arm64",
+        "CMAKE_C_COMPILER": "arm-linux-gnueabihf-gcc",
+        "CMAKE_CXX_COMPILER": "arm-linux-gnueabihf-g++",
+        "CMAKE_SYSTEM_NAME": "Unix",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "android-ndk-arm64-v8a",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/android-ndk-arm64-v8a",
+      "installDir": "${sourceDir}/cmake-out/android-ndk-arm64-v8a",
+      "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "ANDROID_NATIVE_API_LEVEL": "29",
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_ARCH_NAME": "arm64-v8a",
+        "ANDROID_ABI": "arm64-v8a",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "android-ndk-x86_64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/android-ndk-x86_64",
+      "installDir": "${sourceDir}/cmake-out/android-ndk-x86_64",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+        "ANDROID_NATIVE_API_LEVEL": "29",
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_ARCH_NAME": "x86_64",
+        "ANDROID_ABI": "x86_64",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "android-ndk-i386",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/android-ndk-i386",
+      "installDir": "${sourceDir}/cmake-out/android-ndk-i386",
+      "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "ANDROID_NATIVE_API_LEVEL": "29",
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_ARCH_NAME": "x86",
+        "ANDROID_ABI": "x86",
+        "CMAKE_SHARED_LIB_SUFFIX": ".so"
+      }
+    },
+    {
+      "name": "macos-clang-x86_64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/macos-clang-x86_64",
+      "installDir": "${sourceDir}/cmake-out/macos-clang-x86_64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "x86_64",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_SYSTEM_NAME": "Darwin",
+        "CMAKE_SHARED_LIB_SUFFIX": ".dylib"
+      }
+    },
+    {
+      "name": "macos-clang-arm64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/macos-clang-arm64",
+      "installDir": "${sourceDir}/cmake-out/macos-clang-arm64",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "arm64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_SYSTEM_NAME": "Darwin",
+        "CMAKE_SHARED_LIB_SUFFIX": ".dylib"
+      }
+    },
+    {
+      "name": "ios-xcode-arm64",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build/ios-xcode-arm64",
+      "installDir": "${sourceDir}/cmake-out/ios-xcode-arm64",
+      "environment": {
+        "XCODE_APP": "/Applications/Xcode.app/Contents/Developer"
+      },
+      "toolchainFile": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/cmake/iOS.toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_ARCH_NAME": "arm64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0",
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_SHARED_LIB_SUFFIX": ".dylib"
+      }
+    }
+  ]
+}
