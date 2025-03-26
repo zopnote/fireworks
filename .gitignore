@@ -11,3 +11,7 @@ __pycache__
 /.out/
 /cmake-build/
 /cmake-out/
+/engine/interface/web_ui/surfaces/fireworks_interface_surfaces.iml
+/engine/interface/web_ui/surfaces/analysis_options.yaml
+/engine/interface/web_ui/surfaces/pubspec.lock
+/engine/interface/web_ui/surfaces/.metadata

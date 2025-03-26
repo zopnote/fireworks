@@ -10,7 +10,7 @@ project(
 )
 
 add_custom_target(sdk
-        DEPENDS interface
+        DEPENDS interface runner
 )
 # -----------------------------------------------------------------------------
 
@@ -83,7 +83,8 @@ add_subdirectory(runner)
 # -----------------------------------------------------------------------------
 
 
-# Vendor scripts and targets
+# Basic binary files
 # -----------------------------------------------------------------------------
-include(engine/runtime/vendor/libyaml.cmake)
+install(FILES license.md DESTINATION .)
+install(FILES readme.md DESTINATION .)
 # -----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 {
-    "name": "app",
-    "short_name": "app",
+    "name": "fireworks_interface_surfaces",
+    "short_name": "fireworks_interface_surfaces",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

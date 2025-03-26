@@ -1,8 +1,7 @@
 
-set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/runner)
+set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/engine/interface/host)
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin DESTINATION ${BIN_APP_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib DESTINATION ${BIN_APP_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src DESTINATION ${BIN_APP_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pubspec.yaml DESTINATION ${BIN_APP_DIR})
 
 # Dart entry points to start the server and manage the web app at runtime
@@ -21,8 +20,8 @@ else ()
     set(EXECUTABLE_ENDING)
 endif ()
 
-set(OUTPUT_BINARY ${BIN_APP_DIR}/fireworks${EXECUTABLE_ENDING})
-set(ENTRY_POINT ${BIN_APP_DIR}/bin/fireworks.dart)
+set(OUTPUT_BINARY ${BIN_APP_DIR}/fireworks_web_host${EXECUTABLE_ENDING})
+set(ENTRY_POINT ${BIN_APP_DIR}/src/main.dart)
 
 add_custom_command(
         OUTPUT ${OUTPUT_BINARY}
@@ -32,11 +31,10 @@ add_custom_command(
         VERBATIM
 )
 
-file(GLOB_RECURSE BIN_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/*)
-file(GLOB_RECURSE LIB_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/*)
-add_custom_target(runner
+file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+add_custom_target(interface_web_host
         DEPENDS ${OUTPUT_BINARY}
-        SOURCES ${BIN_SOURCE_FILES} ${LIB_SOURCE_FILES}
+        SOURCES ${SOURCE_FILES}
 )
 
 install(FILES ${OUTPUT_BINARY} DESTINATION ${OUT_BINARY_DIRECTORY})

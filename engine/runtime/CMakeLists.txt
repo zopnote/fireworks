@@ -1,23 +1,37 @@
-set(ENGINE_RUNTIME_DIR ${PROJECT_SOURCE_DIR}/engine/runtime)
-set(ENGINE_RUNTIME_MODULES
-        src/core
-)
-set(stdpch_header include/stdpch.h)
-add_library(runtime_stdpch STATIC ${stdpch_header})
-set_target_properties(runtime_stdpch PROPERTIES LINKER_LANGUAGE C)
-set(ENGINE_RUNTIME_SOURCES)
-set(ENGINE_RUNTIME_INCLUDE_DIRS)
-foreach (MODULE IN LISTS ENGINE_RUNTIME_MODULES)
-    file(GLOB_RECURSE MODULE_SOURCES "${ENGINE_RUNTIME_DIR}/${MODULE}/private/*.c")
-    set(ENGINE_RUNTIME_SOURCES ${ENGINE_RUNTIME_SOURCES} ${MODULE_SOURCES})
-    set(ENGINE_RUNTIME_INCLUDE_DIRS ${ENGINE_RUNTIME_INCLUDE_DIRS} ${ENGINE_RUNTIME_DIR}/${MODULE}/public)
-    add_library(runtime_fireworks_${MODULE} STATIC ${MODULE_SOURCES})
-    target_include_directories(runtime_fireworks_${MODULE} PUBLIC ${ENGINE_RUNTIME_DIR}/${MODULE}/public)
-    target_precompile_headers(runtime_fireworks_${MODULE} PRIVATE ${stdpch_header})
-endforeach ()
 
-add_library(runtime_fireworks SHARED ${ENGINE_RUNTIME_SOURCES})
-target_include_directories(runtime_fireworks PUBLIC ${ENGINE_RUNTIME_INCLUDE_DIRS})
-target_precompile_headers(runtime_fireworks PRIVATE ${stdpch_header})
+set(RUNTIME_DIR ${PROJECT_SOURCE_DIR}/engine/runtime)
 
-add_subdirectory(src/tests)
+
+set(PCH ${CMAKE_CURRENT_SOURCE_DIR}/global/stdpch.h)
+set(RUNTIME_MODULES_DIR ${RUNTIME_DIR}/modules)
+
+set(RT_SOURCES)
+set(RT_INCLUDE_DIRS)
+
+macro(runtime_add_module NAME)
+    file(GLOB_RECURSE MODULE_SOURCES ${RUNTIME_MODULES_DIR}/${NAME}/private/**.c)
+    set(RT_SOURCES ${RT_SOURCES} ${MODULE_SOURCES})
+    set(RT_INCLUDE_DIRS ${RT_INCLUDE_DIRS} ${RUNTIME_MODULES_DIR}/${NAME}/public)
+endmacro()
+
+include(vendor/libyaml.cmake)
+include(modules/core/core.cmake)
+
+add_library(runtime INTERFACE ${RT_SOURCES})
+target_precompile_headers(runtime INTERFACE global/stdpch.h)
+target_include_directories(runtime INTERFACE ${RT_INCLUDE_DIRS})
+target_link_libraries(runtime PUBLIC libyaml)
+install(TARGETS runtime DESTINATION ${OUT_ENGINE_RT_DIR})
+
+include(build/toolchains/cross_compile_android.cmake)
+compile_android(runtime 21 "arm64")
+compile_android(runtime 21 "x86")
+compile_android(runtime 21 "x86_64")
+
+if(PLATFORM_IOS)
+    if(CMAKE_SYSTEM_NAME NOT STREQUAL "Darwin")
+        message(FATAL_ERROR "Building the engine runtime is only supported on macOS.")
+    endif ()
+endif()
+
+add_subdirectory(tests)

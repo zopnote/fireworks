@@ -28,28 +28,30 @@ if (NOT EXISTS ${YAML_DIRECTORY})
     )
 endif ()
 
-add_library(vendor_yaml SHARED ${YAML_SOURCE_FILES})
+add_library(libyaml SHARED ${YAML_SOURCE_FILES})
 
 if (NOT EXISTS ${YAML_DIRECTORY})
-    add_dependencies(vendor_yaml vendor_yaml_clone)
+    add_dependencies(libyaml vendor_yaml_clone)
 endif ()
 
-target_compile_definitions(vendor_yaml
+target_compile_definitions(libyaml
         PRIVATE HAVE_CONFIG_H
         PUBLIC
         $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:YAML_DECLARE_STATIC>
         $<$<BOOL:${MSVC}>:_CRT_SECURE_NO_WARNINGS>
 )
 
-set_target_properties(vendor_yaml
+set_target_properties(libyaml
         PROPERTIES DEFINE_SYMBOL YAML_DECLARE_EXPORT
 )
 
-target_include_directories(vendor_yaml PUBLIC ${YAML_DIRECTORY}/include)
+target_include_directories(libyaml PUBLIC ${YAML_DIRECTORY}/include)
 
-install(TARGETS vendor_yaml
-        COMPONENT DESTINATION ${OUT_BINARY_DIRECTORY}
-        RUNTIME DESTINATION ${OUT_BINARY_DIRECTORY}
-        ARCHIVE DESTINATION ${OUT_LIBRARY_DIRECTORY}
+install(TARGETS libyaml
+        RUNTIME DESTINATION ${OUT_ENGINE_RT_DIR}
 )
 
+include(build/toolchains/cross_compile_android.cmake)
+compile_android(libyaml 21 "arm64")
+compile_android(libyaml 21 "x86")
+compile_android(libyaml 21 "x86_64")
