@@ -1,17 +1,2 @@
-/out
-/.idea/
-__pycache__
-/bin/pubspec.lock
-/bin/.dart_tool/
-/bin/ui/.dart_tool/
-/bin/ui/build/
-/bin/ui/pubspec.lock
-/bin/ui/.flutter-plugins-dependencies
-/bin/ui/.flutter-plugins
-/.out/
 /cmake-build/
 /cmake-out/
-/engine/interface/web_ui/surfaces/fireworks_interface_surfaces.iml
-/engine/interface/web_ui/surfaces/analysis_options.yaml
-/engine/interface/web_ui/surfaces/pubspec.lock
-/engine/interface/web_ui/surfaces/.metadata

@@ -9,9 +9,6 @@ project(
         LANGUAGES C CXX
 )
 
-add_custom_target(sdk
-        DEPENDS interface runner
-)
 # -----------------------------------------------------------------------------
 
 
@@ -46,15 +43,6 @@ endif()
 
 # The binary and internal paths are hard coded in the program
 set(OUT_BINARY_DIRECTORY bin)
-
-set(OUT_ENGINE_DIR engine)
-set(OUT_ENGINE_RT_DIR ${OUT_ENGINE_DIR}/runtime)
-set(OUT_ENGINE_RT_HEADER_DIR ${OUT_ENGINE_RT_DIR}/include)
-set(OUT_ENGINE_UI_DIR ${OUT_ENGINE_DIR}/interface)
-
-set(OUT_PACKAGES_DIR packages)
-set(OUT_RUNNER_BIN_DIR ${OUT_BINARY_DIRECTORY})
-set(OUT_RUNNER_TOOLS_BIN_DIR ${OUT_RUNTIME_DIRECTORY}/runner)
 
 
 # -----------------------------------------------------------------------------

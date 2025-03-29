@@ -46,7 +46,7 @@ in the source code.
 
 ### 5. Licensing Fees
 
-The license cost is 5% of the revenue generated from the product once the revenue 
+The license cost is 5% of the revenue generated from the product after and once the revenue 
 exceeds $5,000 USD. Below this threshold, the licensee can use the commercial 
 license free of charge.
 
@@ -54,4 +54,4 @@ license free of charge.
 
 The licensee is free to choose under which license their product is distributed. 
 However, this must not compromise the ownership of the software by the licensor, 
-nor invalidate the licensor’s licensing terms.
+nor invalidate the licensors licensing terms.
