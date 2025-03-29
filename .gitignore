@@ -1,2 +1,4 @@
 /cmake-build/
 /cmake-out/
+/runner/go-build/
+/runner/.idea/
