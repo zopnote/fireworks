@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.20)
 
 
 # -----------------------------------------------------------------------------
@@ -39,20 +39,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-microsoft -Wno-deprecated-declarations")
 endif()
 # -----------------------------------------------------------------------------
-
-
-
-# Global config
-# -----------------------------------------------------------------------------
-string(TOLOWER
-        "${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}"
-        LOWER_CMAKE_BUILD_NAME
-)
-set(CMAKE_INSTALL_PREFIX
-        "${CMAKE_SOURCE_DIR}/cmake-out/${LOWER_CMAKE_BUILD_NAME}/${PROJECT_NAME}"
-)
-# -----------------------------------------------------------------------------
-
 
 
 # Variables which defines the structure of the output, installed, binaries.

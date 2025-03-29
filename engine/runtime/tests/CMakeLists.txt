@@ -1,2 +1,0 @@
-add_executable(runtime_tests_main main_test.c)
-target_link_libraries(runtime_tests_main runtime)

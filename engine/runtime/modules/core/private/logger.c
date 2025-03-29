@@ -1,6 +1,7 @@
 #include "logger.h"
 #include "common.h"
 
+
 static bool str_of_time(const struct tm* time, char* buffer) {
     return sprintf(
         buffer, "%02d:%02d:%02d, %02d-%02d-%d",
