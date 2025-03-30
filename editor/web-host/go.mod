@@ -1,4 +1,4 @@
-module fireworks_runner
+module fireworks_web_host
 
 go 1.23.2
 
