@@ -2,3 +2,4 @@
 /cmake-out/
 /runner/.idea/
 /runner/bin/
+/build/gen_docs/.venv/

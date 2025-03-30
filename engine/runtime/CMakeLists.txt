@@ -1,2 +1,2 @@
 
-include(vendor/libyaml.cmake)
+add_subdirectory(vendor/libyaml)
