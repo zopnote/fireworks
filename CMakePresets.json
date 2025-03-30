@@ -29,12 +29,12 @@
       "name": "win-arm64",
       "description": "Ensure to have the Visual Studio Cross Compiler for arm installed.",
       "generator": "Visual Studio 17 2022",
-      "architecture": "ARM",
+      "architecture": "ARM64",
       "binaryDir": "${sourceDir}/cmake-build/win-arm64",
       "installDir": "${sourceDir}/cmake-out/win-arm64",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Windows",
-        "CMAKE_SYSTEM_PROCESSOR": "ARM"
+        "CMAKE_SYSTEM_PROCESSOR": "ARM64"
       },
       "condition": {
         "type": "equals",

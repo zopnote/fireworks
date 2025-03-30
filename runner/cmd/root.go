@@ -4,7 +4,7 @@
  * Project is licensed under the terms of the GNU General Public License v3.0 (GPLv3) for open-source usage.
  */
 
-package cmd
+package fireworks
 
 import (
 	"fmt"

@@ -1,1 +1,0 @@
-install(DIRECTORY fireworks DESTINATION ${OUT_PACKAGES_DIR})

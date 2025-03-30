@@ -1,5 +1,5 @@
 /cmake-build/
 /cmake-out/
 /runner/.idea/
-/runner/bin/
+/runner/test/build-out/
 /build/gen_docs/.venv/

@@ -7,13 +7,13 @@
 package main
 
 import (
-	"fireworks_runner/cmd"
+	fireworks "fireworks_runner/cmd"
 	"fmt"
 	"os"
 )
 
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
+	if err := fireworks.RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
