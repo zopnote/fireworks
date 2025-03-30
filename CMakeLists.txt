@@ -49,7 +49,7 @@ endif()
 # Centralized structure configuration. Note that this will be hard coded in the output binaries.
 # -----------------------------------------------------------------------------
 set(FIREWORKS_INSTALL_BINARIES ${CMAKE_INSTALL_PREFIX}/bin)
-set(FIREWORKS_INSTALL_WEB_VIEW ${CMAKE_INSTALL_PREFIX}/web)
+set(FIREWORKS_INSTALL_WEB_VIEW ${CMAKE_INSTALL_PREFIX})
 set(FIREWORKS_INSTALL_PACKAGES ${CMAKE_INSTALL_PREFIX}/packages)
 set(FIREWORKS_INSTALL_RUNTIME_HEADER ${CMAKE_INSTALL_PREFIX}/include)
 
@@ -66,3 +66,4 @@ install(FILES readme.md DESTINATION .)
 
 
 add_subdirectory(runner)
+add_subdirectory(editor/webview)

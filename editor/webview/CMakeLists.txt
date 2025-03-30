@@ -1,7 +1,7 @@
 
 # General interface app setup
 # -----------------------------------------------------------------------------
-set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/engine/interface/surfaces)
+set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/editor/webview)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib DESTINATION ${BIN_APP_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/web DESTINATION ${BIN_APP_DIR})
@@ -26,14 +26,14 @@ add_custom_command(
         OUTPUT ${OUTPUT_BINARIES}
         COMMAND ${FLUTTER_EXE} build web
         WORKING_DIRECTORY ${BIN_APP_DIR}
-        COMMENT "Compile interface Flutter web app ${ENTRY_POINT}."
+        COMMENT "Compile webview ${ENTRY_POINT}..."
         VERBATIM
 )
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/*)
-add_custom_target(interface_web_ui_surfaces
+add_custom_target(editor_webview
         DEPENDS ${OUTPUT_BINARIES}
         SOURCES ${SOURCE_FILES}
 )
 
-install(DIRECTORY ${OUTPUT_BINARIES} DESTINATION ${OUT_ENGINE_UI_DIR}/surfaces)
+install(DIRECTORY ${OUTPUT_BINARIES} DESTINATION ${FIREWORKS_INSTALL_WEB_VIEW})
 # -----------------------------------------------------------------------------
