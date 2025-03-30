@@ -8,8 +8,7 @@ With Fireworks, you can create games and other 3d real-time applications for mob
 The sdk is available for Windows, Linux and macOS.
 
 Just like other engines, Fireworks is free of charge as long you are non-commercial. 
-If you revenue exceeds 5000$ you have to get a commercial license that forces 
-you to pay 5% of you further revenue.
+Otherwise, you have to get a commercial license that forces you to pay 5% of your revenue once it exceeds 10 000$.
 # Fireworks source structure
 
 **Quick overview**
