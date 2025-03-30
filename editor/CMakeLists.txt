@@ -1,9 +1,10 @@
 
 # General interface app setup
 # -----------------------------------------------------------------------------
-set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/editor/webview)
+set(BIN_APP_DIR ${CMAKE_BINARY_DIR}/editor)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lib DESTINATION ${BIN_APP_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/packages DESTINATION ${BIN_APP_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/web DESTINATION ${BIN_APP_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test DESTINATION ${BIN_APP_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pubspec.yaml DESTINATION ${BIN_APP_DIR})
@@ -34,6 +35,6 @@ add_custom_target(editor_webview
         DEPENDS ${OUTPUT_BINARIES}
         SOURCES ${SOURCE_FILES}
 )
-
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/packages/fireworks_editor DESTINATION ${FIREWORKS_INSTALL_PACKAGES})
 install(DIRECTORY ${OUTPUT_BINARIES} DESTINATION ${FIREWORKS_INSTALL_WEB_VIEW})
 # -----------------------------------------------------------------------------

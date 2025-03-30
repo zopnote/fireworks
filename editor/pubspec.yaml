@@ -1,4 +1,4 @@
-name: fireworks_interface_surfaces
+name: fireworks_editor_webview
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -28,6 +28,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  fireworks_editor:
+    path: packages/fireworks_editor
   flutter:
     sdk: flutter
 
