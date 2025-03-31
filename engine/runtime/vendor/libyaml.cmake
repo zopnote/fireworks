@@ -1,0 +1,18 @@
+include(ExternalProject)
+
+ExternalProject_Add(
+        libyaml
+        GIT_REPOSITORY https://github.com/yaml/libyaml.git
+        GIT_TAG 0.2.5
+        INSTALL_COMMAND ""
+        INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/libyaml/install
+        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libyaml
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libyaml
+        CMAKE_GENERATOR ${CMAKE_GENERATOR}
+        CMAKE_ARGS
+        $<$<BOOL:${CMAKE_TOOLCHAIN_FILE}>:-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}>
+        $<$<BOOL:${ANDROID_NATIVE_API_LEVEL}>:-DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL}>
+        $<$<BOOL:${ANDROID_ABI}>:-DANDROID_ABI=${ANDROID_ABI}>
+        -DBUILD_SHARED_LIBS=OFF
+        -DBUILD_TESTING=OFF
+)
