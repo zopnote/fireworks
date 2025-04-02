@@ -1,22 +1,62 @@
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(
+FetchContent_Declare(
+        bx
+        GIT_REPOSITORY https://github.com/bkaradzic/bx.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(bx)
+
+file(GLOB_RECURSE SOURCES ${bx_SOURCE_DIR}/src/**.cpp)
+add_library(bx STATIC)
+
+target_sources(bx PRIVATE
+        ${SOURCES}
+)
+target_compile_definitions(bx PRIVATE BX_CONFIG_DEBUG=0)
+target_include_directories(bx PUBLIC
+        ${bx_SOURCE_DIR}/include
+        ${bx_SOURCE_DIR}/3rdparty
+)
+
+FetchContent_Declare(
+        bimg
+        GIT_REPOSITORY https://github.com/bkaradzic/bimg.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(bimg)
+
+file(GLOB_RECURSE SOURCES ${bimg_SOURCE_DIR}/src/**.cpp)
+add_library(bimg STATIC)
+target_link_libraries(bimg PRIVATE bx)
+target_sources(bimg PRIVATE
+        ${SOURCES}
+)
+target_compile_definitions(bimg PRIVATE BX_CONFIG_DEBUG=0)
+target_include_directories(bimg PUBLIC
+        ${bimg_SOURCE_DIR}/include
+        ${bimg_SOURCE_DIR}/3rdparty
+        ${bimg_SOURCE_DIR}/3rdparty/astc-encoder/include
+        ${bimg_SOURCE_DIR}/3rdparty/iqa/include
+        ${bimg_SOURCE_DIR}/3rdparty/tinyexr/deps/miniz
+)
+
+
+FetchContent_Declare(
         bgfx
-        GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
-        GIT_TAG v1.129.8866-492
-        INSTALL_COMMAND ""
-        INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/bgfx/install
-        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/bgfx
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/bgfx
-        CMAKE_GENERATOR ${CMAKE_GENERATOR}
-        CMAKE_ARGS
-        $<$<BOOL:${CMAKE_TOOLCHAIN_FILE}>:-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}>$<$<NOT:$<BOOL:${CMAKE_TOOLCHAIN_FILE}>>:-DNO_WARN=ING>
-        $<$<BOOL:${ANDROID_NATIVE_API_LEVEL}>:-DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL}>$<$<NOT:$<BOOL:${ANDROID_NATIVE_API_LEVEL}>>:-DNO_WARN=ING>
-        $<$<BOOL:${ANDROID_ABI}>:-DANDROID_ABI=${ANDROID_ABI}>$<$<NOT:$<BOOL:${ANDROID_ABI}>>:-DNO_WARN=ING>
-        -DBX_AMALGAMATED=ON
-        -DBGFX_BUILD_TOOLS=OFF
-        -DBGFX_BUILD_EXAMPLES=OFF
-        -DBGFX_AMALGAMATED=ON
-        -DBX_CONFIG_DEBUG=OFF
-        -DBGFX_INSTALL=OFF
+        GIT_REPOSITORY https://github.com/bkaradzic/bgfx.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(bgfx)
+
+file(GLOB_RECURSE SOURCES ${bgfx_SOURCE_DIR}/src/**.cpp)
+add_library(bgfx STATIC)
+target_link_libraries(bgfx PRIVATE bx bimg)
+target_sources(bgfx PRIVATE
+        ${SOURCES}
+)
+target_compile_definitions(bgfx PRIVATE BX_CONFIG_DEBUG=0)
+target_include_directories(bgfx PUBLIC
+        ${bgfx_SOURCE_DIR}/include
+        ${bgfx_SOURCE_DIR}/3rdparty
 )

@@ -8,16 +8,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nuklear)
 
 file(GLOB SOURCES ${nuklear_SOURCE_DIR}/src/**.c)
-set(SOURCES ${SOURCES}
-        ${nuklear_SOURCE_DIR}/src/nuklear_internal.h
-)
 add_library(nuklear STATIC)
-
+set_property(TARGET nuklear PROPERTY C_STANDARD 90)
 
 target_sources(nuklear PRIVATE
         ${SOURCES}
 )
 
+target_compile_definitions(nuklear PUBLIC NK_IMPLEMENTATION)
 target_include_directories(nuklear PUBLIC
         ${nuklear_SOURCE_DIR}/src
 )

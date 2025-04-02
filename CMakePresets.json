@@ -113,7 +113,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/cmake-build/emscripten",
       "installDir": "${sourceDir}/cmake-out/emscripten",
-      "toolchainFile": "$env{EMSCRIPTEN_SDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
     },
     {
       "name": "android-arm64-v8a",
