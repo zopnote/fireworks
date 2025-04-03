@@ -4,3 +4,5 @@
 /runner/test/build-out/
 /build/gen_docs/.venv/
 /editor/packages/fireworks_editor/pubspec.lock
+/.vs/
+/.idea/
