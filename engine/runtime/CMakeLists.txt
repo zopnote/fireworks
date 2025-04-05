@@ -1,4 +1,3 @@
-add_executable(test modules/main.c)
 include(vendor/jolt_physics.cmake)
 include(vendor/libyaml.cmake)
 include(vendor/bgfx.cmake)

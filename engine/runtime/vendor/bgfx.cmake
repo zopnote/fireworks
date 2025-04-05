@@ -13,6 +13,11 @@ add_library(bx STATIC)
 target_sources(bx PRIVATE
         ${SOURCES}
 )
+target_compile_options(bx PRIVATE
+        /Zc:__cplusplus
+        /Zc:preprocessor
+)
+
 target_compile_definitions(bx PRIVATE BX_CONFIG_DEBUG=0)
 target_include_directories(bx PUBLIC
         ${bx_SOURCE_DIR}/include
@@ -32,6 +37,7 @@ target_link_libraries(bimg PRIVATE bx)
 target_sources(bimg PRIVATE
         ${SOURCES}
 )
+
 target_compile_definitions(bimg PRIVATE BX_CONFIG_DEBUG=0)
 target_include_directories(bimg PUBLIC
         ${bimg_SOURCE_DIR}/include
