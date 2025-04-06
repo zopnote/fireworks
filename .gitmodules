@@ -7,9 +7,9 @@
 [submodule "engine/vendor/Nuklear"]
 	path = engine/vendor/Nuklear
 	url = https://github.com/zopnote/Nuklear.git
-[submodule "engine/vendor/bgfx.cmake"]
-	path = engine/vendor/bgfx.cmake
-	url = https://github.com/zopnote/bgfx.cmake.git
 [submodule "engine/vendor/libyaml"]
 	path = engine/vendor/libyaml
 	url = https://github.com/zopnote/libyaml.git
+[submodule "engine/vendor/bgfx.cmake"]
+	path = engine/vendor/bgfx.cmake
+	url = https://github.com/zopnote/bgfx.cmake.git
