@@ -52,4 +52,4 @@ install(FILES readme.md DESTINATION .)
 
 add_subdirectory(runner)
 add_subdirectory(editor)
-add_subdirectory(engine/runtime)
+add_subdirectory(engine)

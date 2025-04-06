@@ -1,5 +1,0 @@
-include(vendor/jolt_physics.cmake)
-include(vendor/libyaml.cmake)
-include(vendor/bgfx.cmake)
-include(vendor/nuklear.cmake)
-include(vendor/sdl3.cmake)

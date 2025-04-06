@@ -1,0 +1,15 @@
+[submodule "engine/vendor/SDL"]
+	path = engine/vendor/SDL
+	url = https://github.com/zopnote/SDL.git
+[submodule "engine/vendor/JoltPhysics"]
+	path = engine/vendor/JoltPhysics
+	url = https://github.com/zopnote/JoltPhysics.git
+[submodule "engine/vendor/Nuklear"]
+	path = engine/vendor/Nuklear
+	url = https://github.com/zopnote/Nuklear.git
+[submodule "engine/vendor/bgfx"]
+	path = engine/vendor/bgfx
+	url = https://github.com/zopnote/bgfx.git
+[submodule "engine/vendor/libyaml"]
+	path = engine/vendor/libyaml
+	url = https://github.com/zopnote/libyaml.git
