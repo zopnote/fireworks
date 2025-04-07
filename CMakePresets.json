@@ -62,7 +62,7 @@
       "installDir": "${sourceDir}/cmake-out/linux-arm64",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
-        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
         "CMAKE_C_COMPILER": "arm-linux-gnueabihf-gcc",
         "CMAKE_CXX_COMPILER": "arm-linux-gnueabihf-g++"
       },
