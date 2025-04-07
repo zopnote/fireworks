@@ -20,6 +20,10 @@ Click  [here](https://visualstudio.microsoft.com/de/downloads/) to get the Micro
 
 If you have problems with bgfx see its prerequisites [here](https://bkaradzic.github.io/bgfx/build.html). 
 
+````shell
+cmake -S . --preset win-x86_64 --DCMAKE_BUILD_TYPE=Debug
+````
+
 ## ARM64 target
 > Host is a Windows x86 or x64/amd64 machine
 
@@ -32,6 +36,10 @@ Click [here](https://visualstudio.microsoft.com/de/downloads/)  to get the Micro
 * MSVC v143 VS 2022 C++ ARM64/ARM64EC buildtools (newest version) ([More Information](https://devblogs.microsoft.com/cppblog/windows-arm64-support-for-cmake-projects-in-visual-studio/))
 * Windows 11-SDK (recommend v10.022621.0) from the Visual Studio installer
 * Go language binaries for Windows amd64 ([here](https://go.dev/dl/))
+
+````shell
+cmake -S . --preset win-arm64 --DCMAKE_BUILD_TYPE=Debug
+````
 
 # Linux
 **Recommend** is an Ubuntu 22.04+ distribution as target and host. SteamOS is also officially supported as target.
@@ -65,6 +73,10 @@ For more information about Linux requirements check out
 [SDL Linux build prerequisites](https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md) and
 [bgfx prerequisites](https://bkaradzic.github.io/bgfx/build.html).
 
+````shell
+cmake -S . --preset linux-x86_64 --DCMAKE_BUILD_TYPE=Debug
+````
+
 ## aarch64 target
 > Host is a Linux x86_64 machine or Linux aarch64 machine
 
@@ -93,6 +105,10 @@ For more information about Linux requirements check out
 [SDL Linux build prerequisites](https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md) and
 [bgfx prerequisites](https://bkaradzic.github.io/bgfx/build.html).
 
+````shell
+cmake -S . --preset linux-arm64 --DCMAKE_BUILD_TYPE=Debug
+````
+
 # macOS
 > Host is a macOS apple silicon machine
 ## Apple silicon macOS target
@@ -104,12 +120,20 @@ All targets are **available for this platform**.
 * Install the Metal development kit on your device ([here](https://developer.apple.com/metal/))
 * Setup the Flutter SDK for macOS ([here](https://docs.flutter.dev/get-started/install/macos/desktop))
 
+````shell
+cmake -S . --preset macos --DCMAKE_BUILD_TYPE=Debug
+````
+
 ## iOS target
 iOS just supports the engine runtime.
 
 **Build requirements**:
 * Xcode with Clang C/C++ compilation and iOS toolchain ([here](https://developer.apple.com/xcode/))
 * Install the Metal development kit on your device ([here](https://developer.apple.com/metal/))
+
+````shell
+cmake -S . --preset ios --DCMAKE_BUILD_TYPE=Debug
+````
 
 
 # Emscripten
@@ -121,6 +145,10 @@ Emscripten just supports the engine runtime.
 2. Install the Emscripten SDK on your platform (at least v3.16.0) ([here](https://emscripten.org/docs/getting_started/downloads.html))
 3. Set the root directory of the Emscripten SDK as environment variable ``EMSDK``.
 
+````shell
+cmake -S . --preset emscripten --DCMAKE_BUILD_TYPE=Debug
+````
+
 
 # Android
 > Host is a Windows x86 or x64/amd64 machine, Linux x86_64 machine, macOS apple silicon machine
@@ -129,3 +157,7 @@ Android just supports the engine runtime.
 
 1. Download the Android NDK (here)
 2. Set the Android NDK root as environment variable ``ANDROID_NDK``.
+
+````shell
+cmake -S . --preset android-arm64-v8a --DCMAKE_BUILD_TYPE=Debug
+````
