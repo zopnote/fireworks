@@ -1,0 +1,7 @@
+message(STATUS "Search for Flutter...")
+find_program(FLUTTER flutter)
+if (FLUTTER)
+    message(STATUS "FOUND")
+else ()
+    message(STATUS "NOT FOUND")
+endif ()
