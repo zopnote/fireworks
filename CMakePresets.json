@@ -19,11 +19,6 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
-      },
-      "vendor": {
-        "jetbrains.com/clion": {
-          "toolchain": "windows"
-        }
       }
     },
     {
@@ -34,18 +29,12 @@
       "binaryDir": "${sourceDir}/cmake-build/win-arm64",
       "installDir": "${sourceDir}/cmake-out/win-arm64",
       "cacheVariables": {
-        "CMAKE_SYSTEM_NAME": "Windows",
-        "CMAKE_SYSTEM_PROCESSOR": "ARM64"
+        "CMAKE_SYSTEM_NAME": "Windows"
       },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
-      },
-      "vendor": {
-        "jetbrains.com/clion": {
-          "toolchain": "windows"
-        }
       }
     },
     {
