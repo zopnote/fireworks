@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 
 
 # -----------------------------------------------------------------------------
-project(fireworks
+project(Fireworks
         DESCRIPTION "Modern cross-platform graphics engine framework."
         VERSION 0.1
         LANGUAGES C CXX
@@ -47,7 +47,7 @@ install(FILES readme.md DESTINATION .)
 # -----------------------------------------------------------------------------
 
 
-
+include(build/cmake/environment.cmake)
 
 add_subdirectory(runner)
 add_subdirectory(editor)
