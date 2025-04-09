@@ -1,0 +1,1 @@
+macro(fireworks_register_module)

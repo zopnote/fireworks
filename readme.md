@@ -4,8 +4,8 @@
 of 3d graphic programs such as games and simulations.
 
 It is inspired by Flutter and focuses to provide a pleasant developer experience just as good.
-With Fireworks, you can create games and other 3d real-time applications for mobile, desktop and the web.
-The sdk is available for Windows, Linux and macOS.
+With Fireworks, you can create games and other 3d real-time applications for desktop and mobile.
+The sdk is available for desktop.
 
 Just like the most engines, Fireworks is free of charge as long you are non-commercial. 
 Otherwise, you have to get a commercial license that forces you to pay 5% of your revenue once it exceeds 10 000$.

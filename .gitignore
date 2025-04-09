@@ -6,3 +6,5 @@
 /editor/packages/fireworks_editor/pubspec.lock
 /.vs/
 /.idea/
+/engine/modules/renderer/pubspec.lock
+/engine/modules/renderer/.dart_tool/

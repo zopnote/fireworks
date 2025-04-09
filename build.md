@@ -42,10 +42,10 @@ cmake -S . --preset win-arm64 --DCMAKE_BUILD_TYPE=Debug
 ````
 
 # Linux
-**Recommend** is an Ubuntu 22.04+ distribution as target and host. SteamOS is also officially supported as target.
+**Recommend** is an Ubuntu 22.04+, Debian or SteamOS distribution as target.
 
 ## x86_64 target
-> Host is a Linux x86_64 machine
+> Host is a Linux Ubuntu 22.04+ machine
 
 All targets are **available for this platform**.
 
@@ -58,27 +58,21 @@ All targets are **available for this platform**.
 sudo apt-get update -y && sudo apt-get upgrade -y;
 ````
 ````shell
-sudo apt-get install \
-libgl1-mesa-dev x11proto-core-dev libx11-dev build-essential git make \
+sudo apt-get install build-essential git make \
 pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
 libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
 libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
 libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev 
+libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
 ````
-If you encounter problems related to X11 add ``libx11*`` as packages.\
-On Ubuntu 22.04+ as host add ``libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev``.
-
-For more information about Linux requirements check out
-[SDL Linux build prerequisites](https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md) and
-[bgfx prerequisites](https://bkaradzic.github.io/bgfx/build.html).
 
 ````shell
 cmake -S . --preset linux-x86_64 --DCMAKE_BUILD_TYPE=Debug
 ````
 
 ## aarch64 target
-> Host is a Linux x86_64 machine or Linux aarch64 machine
+> Host is a Linux Ubuntu 22.04+ aarch64 machine
 
 All targets are **available for this platform**.
 
@@ -90,20 +84,14 @@ All targets are **available for this platform**.
 sudo apt-get update -y && sudo apt-get upgrade -y;
 ````
 ````shell
-sudo apt-get install gcc-aarch64-linux-gnueabihf g++-aarch64-linux-gnueabihf \
-libgl1-mesa-dev x11proto-core-dev libx11-dev build-essential git make \
+sudo apt-get install gcc-aarch64-linux-gnueabihf g++-aarch64-linux-gnueabihf build-essential git make \
 pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
 libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
 libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
 libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev 
+libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
 ````
-If you encounter problems related to X11 add ``libx11*`` as packages.\
-On Ubuntu 22.04+ as host add ``libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev``.
-
-For more information about Linux requirements check out 
-[SDL Linux build prerequisites](https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md) and
-[bgfx prerequisites](https://bkaradzic.github.io/bgfx/build.html).
 
 ````shell
 cmake -S . --preset linux-arm64 --DCMAKE_BUILD_TYPE=Debug
