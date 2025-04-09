@@ -22,16 +22,22 @@ Future<Module> register(BuildInformation host, BuildInformation target) async {
   module.cmake
     ..languages = [ lang.c, lang.cxx ]
     ..standard = 23
-    ..external = [
-      ExternalProject(
+    ..dependencies = [
+      Repository(
           name: "JoltPhysics",
           repository: "https://github.com/zopnote/JoltPhysics.git",
           branch: "forked-1"
       ),
-      ExternalProject(
+      Repository(
           name: "SDL",
           repository: "https://github.com/zopnote/SDL.git",
-          branch: "forked-1"
+          branch: "forked-1",
+          options: {
+            "SDL_EXAMPLES": false,
+            "SDL_TESTS": false,
+            "SDL_INSTALL": false,
+            "SDL_SHARED": false
+          }
       )
   ];
   
