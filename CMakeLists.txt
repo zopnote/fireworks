@@ -48,4 +48,4 @@ install(FILES readme.md DESTINATION .)
 
 
 
-add_subdirectory(fireworks/cmdline)
+add_subdirectory(cmdline)
