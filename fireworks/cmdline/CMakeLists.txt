@@ -7,12 +7,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set(EXE_ENDING .exe)
 endif ()
 
-set(OUTPUT_BINARY_PATH ${CMAKE_BINARY_DIR}/fireworks${EXE_ENDING})
+set(OUTPUT_BINARY_PATH ${CMAKE_CURRENT_BINARY_DIR}/fireworks${EXE_ENDING})
 
 add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E echo "Building runner..."
-        COMMAND ${GO_EXECUTABLE} build -o ${OUTPUT_BINARY_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/main.go
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ${GO_EXECUTABLE} build -o ${OUTPUT_BINARY_PATH} main.go
+        WORKING_DIRECTORY .
         OUTPUT ${OUTPUT_BINARY_PATH}
 )
 
@@ -21,4 +21,3 @@ add_custom_target(runner
 )
 
 install(FILES ${OUTPUT_BINARY_PATH} DESTINATION ${FIREWORKS_INSTALL_BINARIES})
-add_subdirectory(packages)

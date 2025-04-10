@@ -47,8 +47,5 @@ install(FILES readme.md DESTINATION .)
 # -----------------------------------------------------------------------------
 
 
-include(build/cmake/environment.cmake)
 
-add_subdirectory(runner)
-add_subdirectory(editor)
-add_subdirectory(engine)
+add_subdirectory(fireworks/cmdline)

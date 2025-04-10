@@ -1,4 +1,4 @@
-import 'package:fireworks_module/module.dart';
+import 'package:fireworks_spec/module.dart';
 
 Future<Module> register(BuildInformation host, BuildInformation target) async {
   
