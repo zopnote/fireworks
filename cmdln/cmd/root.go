@@ -11,6 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var RootHelpMsg = fmt.Sprintf("" +
+	"" +
+	"|   __|_|___ ___ _ _ _ ___ ___| |_ ___ \n" +
+	"|   __| |  _| -_| | | | . |  _| '_|_ -|\n" +
+	"|__|  |_|_| |___|_____|___|_| |_,_|___|\n",
+
+)
 var RootCmd = &cobra.Command{
 	Use:   "mycli",
 	Short: "A simple CLI tool",

@@ -7,12 +7,19 @@
 package main
 
 import (
-	fireworks "fireworks_runner/cmd"
+	fireworks "fireworks_cmd/cmd"
 	"fmt"
+	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
+var FireworksVersion = "@PROJECT_VERSION@"
+var BuildConfiguration = "@PROJECT_BUILD_TYPE@"
+
 func main() {
+	cobra.MousetrapHelpText = fireworks.RootHelpMsg
+	cobra.MousetrapDisplayDuration = time.Minute
 	if err := fireworks.RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
