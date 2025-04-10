@@ -13,7 +13,7 @@ var PubCommand = &cobra.Command{
 	Short: "Manage dependencies of the Dart ecosystem.",
 	Long:  "Manage pub package manager dependencies of your project.",
 	Run: func(cmd *cobra.Command, args []string) {
-		
+
 	},
 }
 

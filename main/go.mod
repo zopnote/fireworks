@@ -1,4 +1,4 @@
-module fireworks_cmd
+module fireworks
 
 go 1.23.2
 

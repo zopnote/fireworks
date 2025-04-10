@@ -7,7 +7,7 @@
 package main
 
 import (
-	fireworks "fireworks_cmd/cmd"
+	fireworks "fireworks/cmd"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
