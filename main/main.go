@@ -14,9 +14,6 @@ import (
 	"time"
 )
 
-var FireworksVersion = "@PROJECT_VERSION@"
-var BuildConfiguration = "@PROJECT_BUILD_TYPE@"
-
 func main() {
 	cobra.MousetrapHelpText = fireworks.RootHelpMsg
 	cobra.MousetrapDisplayDuration = time.Minute
