@@ -8,3 +8,4 @@
 /.idea/
 /engine/renderer/pubspec.lock
 /engine/renderer/.dart_tool/
+/bin/

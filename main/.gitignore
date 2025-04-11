@@ -1,7 +1,0 @@
-build/
-.idea
-/dart-pkgs/fireworks_spec/pubspec.lock
-/bin/
-/packages/modspec/.dart_tool/
-/packages/modspec/pubspec.lock
-/internal/data.go
