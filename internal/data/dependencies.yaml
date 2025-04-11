@@ -1,0 +1,27 @@
+#
+# Download rules for the fireworks command line tooling to download and configure the different artifacts
+#
+dependencies:
+  dart_sdk:
+    download:
+      version: "3.7.2"
+      channel: "stable"
+      architecture:
+        x86_64: "x64"
+        arm64: "arm64"
+      url: "https://storage.googleapis.com/dart-archive/channels/${channel}/release/${version}/sdk/dartsdk-${system}-${architecture}-release.zip"
+  dart_gen_snapshots:
+    download:
+      version: "3.7.2"
+      architecture:
+        x86_64: "x86_64"
+        arm64: "arm64"
+      url: "https://github.com/zopnote/fireworks/artifacts/..."
+  cmake:
+    download:
+      version: "4.0.0"
+      channel: "stable"
+      architecture:
+        x86_64: "x86_64"
+        arm64: "arm64"
+      url: "https://github.com/Kitware/CMake/releases/download/v${version}/cmake-${version}-${system}-${architecture}.zip"
