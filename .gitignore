@@ -1,11 +1,8 @@
 /cmake-build/
 /cmake-out/
-/runner/.idea/
-/runner/test/build-out/
-/build/gen_docs/.venv/
-/editor/packages/fireworks_editor/pubspec.lock
 /.vs/
 /.idea/
 /engine/renderer/pubspec.lock
 /engine/renderer/.dart_tool/
 /bin/
+/build/

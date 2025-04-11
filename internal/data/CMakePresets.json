@@ -8,8 +8,8 @@
     {
       "name": "win-x86_64",
       "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/cmake-build/win-x86_64",
-      "installDir": "${sourceDir}/cmake-out/win-x86_64",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "architecture": "x64",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Windows",
@@ -26,8 +26,8 @@
       "description": "Ensure to have the Visual Studio Cross Compiler for arm installed.",
       "generator": "Visual Studio 17 2022",
       "architecture": "ARM64",
-      "binaryDir": "${sourceDir}/cmake-build/win-arm64",
-      "installDir": "${sourceDir}/cmake-out/win-arm64",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Windows",
         "CMAKE_SYSTEM_PROCESSOR": "ARM64"
@@ -41,8 +41,8 @@
     {
       "name": "linux-x86_64",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/cmake-build/linux-x86_64",
-      "installDir": "${sourceDir}/cmake-out/linux-x86_64",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
         "CMAKE_SYSTEM_PROCESSOR": "x86_64",
@@ -58,8 +58,8 @@
     {
       "name": "linux-arm64",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/cmake-build/linux-arm64",
-      "installDir": "${sourceDir}/cmake-out/linux-arm64",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
         "CMAKE_SYSTEM_PROCESSOR": "arm64",
@@ -75,8 +75,8 @@
     {
       "name": "macos",
       "generator": "Xcode",
-      "binaryDir": "${sourceDir}/cmake-build/macos",
-      "installDir": "${sourceDir}/cmake-out/macos",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_OSX_ARCHITECTURES": "arm64"
       },
@@ -89,8 +89,8 @@
     {
       "name": "ios",
       "generator": "Xcode",
-      "binaryDir": "${sourceDir}/cmake-build/ios",
-      "installDir": "${sourceDir}/cmake-out/ios",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/cmake/iOS.toolchain.cmake",
       "condition": {
         "type": "equals",
@@ -101,15 +101,15 @@
     {
       "name": "emscripten",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-build/emscripten",
-      "installDir": "${sourceDir}/cmake-out/emscripten",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
     },
     {
       "name": "android-arm64-v8a",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-build/android-arm64-v8a",
-      "installDir": "${sourceDir}/cmake-out/android-arm64-v8a",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
       "cacheVariables": {
         "ANDROID_NATIVE_API_LEVEL": "29",
@@ -119,8 +119,8 @@
     {
       "name": "android-x86_64",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-build/android-x86_64",
-      "installDir": "${sourceDir}/cmake-out/android-x86_64",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
       "cacheVariables": {
         "ANDROID_NATIVE_API_LEVEL": "29",
@@ -130,8 +130,8 @@
     {
       "name": "android-i386",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-build/android-i386",
-      "installDir": "${sourceDir}/cmake-out/android-i386",
+      "binaryDir": "${sourceDir}/build/${presetName}-cmake-build",
+      "installDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
       "cacheVariables": {
         "ANDROID_NATIVE_API_LEVEL": "29",

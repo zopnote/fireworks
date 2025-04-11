@@ -1,0 +1,34 @@
+{
+  "project": {
+    "copyright": "Copyright (c) 2025 Lenny Siebert. All rights reserved.\nFireworks is licensed under the terms of the GNU General Public License v3.0 (GPLv3) for open-source usage.\n",
+    "version": "0.1",
+    "description": "Modern cross-platform graphics engine framework.",
+    "channel": "dev"
+  },
+  "dependencies": {
+    "dart_sdk": {
+      "version": "3.7.2",
+      "architecture": {
+        "x86_64": "x64",
+        "arm64": "arm64"
+      },
+      "url": "https://storage.googleapis.com/dart-archive/channels/stable/release/${version}/sdk/dartsdk-${system}-${architecture}-release.zip"
+    },
+    "dart_gen_snapshot": {
+      "version": "3.7.2",
+      "architecture": {
+        "x86_64": "x64",
+        "arm64": "arm64"
+      },
+      "url": ""
+    },
+    "cmake": {
+      "version": "4.0.1",
+      "architecture": {
+        "x86_64": "x64",
+        "arm64": "arm64"
+      },
+      "url": "https://github.com/Kitware/CMake/releases/download/v${version}/cmake-${version}-${system}-${architecture}.zip"
+    }
+  }
+}
