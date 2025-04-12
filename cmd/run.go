@@ -5,3 +5,18 @@
  */
 
 package fireworks
+
+import "github.com/spf13/cobra"
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Run you project in development.",
+	Long:  "Starts the entry point of your application and enable hot reload features.",
+	Run: func(cmd *cobra.Command, args []string) {
+
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(runCmd)
+}

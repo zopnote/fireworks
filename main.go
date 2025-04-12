@@ -1,24 +1,14 @@
 /*
- * Copyright (c) 2025 Lenny Siebert. All rights reserved.
- *
- * Project is licensed under the terms of the GNU General Public License v3.0 (GPLv3) for open-source usage.
+*  Copyright (c) 2025 Lenny Siebert. All rights reserved.
+*  Licensed under the terms of the GNU General Public License v3.0.
  */
 
 package main
 
 import (
-	fireworks "fireworks/cmd"
-	"fmt"
-	"github.com/spf13/cobra"
-	"os"
-	"time"
+	cmd "fireworks/cmd"
 )
 
 func main() {
-	cobra.MousetrapHelpText = fireworks.RootHelpMsg
-	cobra.MousetrapDisplayDuration = time.Minute
-	if err := fireworks.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	cmd.Execute()
 }

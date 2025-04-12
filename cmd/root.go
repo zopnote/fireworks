@@ -9,18 +9,26 @@ package fireworks
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"os"
 )
 
-var RootHelpMsg = fmt.Sprintf("" +
-	"Command line tooling of the Fireworks engine v0.1\n" +
-	"\n" +
-	"\n" +
-	"\n",
-)
-var RootCmd = &cobra.Command{
-	Use:   "mycli",
-	Short: "A simple CLI tool",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Welcome to My CLI tool!")
+var rootCmd = &cobra.Command{
+	Use:   "fireworks",
+	Short: "Fireworks is a modern cross-platform graphics engine framework.",
+	Long: "Fireworks is a 3d engine framework with focus on a modern development " +
+		"cycle. It serves an environment for creating games and other realtime 3d applications " +
+		"as well as shipping these projects to multiple platforms. ",
+	Hidden: true,
+	CompletionOptions: cobra.CompletionOptions{
+		HiddenDefaultCmd: true,
 	},
+}
+
+func Execute() {
+	err := rootCmd.Execute()
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, "Error while executing root command.")
+		os.Exit(1)
+	}
+	os.Exit(0)
 }

@@ -5,3 +5,18 @@
  */
 
 package fireworks
+
+import "github.com/spf13/cobra"
+
+var buildCmd = &cobra.Command{
+	Use:   "build",
+	Short: "Build your module for different platforms.",
+	Long:  "Build your Fireworks module into a dependency available, precompiled module or a multi platform application.",
+	Run: func(cmd *cobra.Command, args []string) {
+
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(buildCmd)
+}
