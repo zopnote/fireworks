@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	internal "fireworks/internal/source/env"
+	internal "fireworks/internal/source"
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"

@@ -15,7 +15,7 @@ type Preset struct {
 	Architecture   string            `json:"architecture"`
 	CacheVariables map[string]string `json:"cacheVariables"`
 }
-type configPresetsT struct {
+type configPresets struct {
 	Presets []Preset `json:"configurePresets"`
 }
 
@@ -43,7 +43,7 @@ func GetPresets() ([]Preset, error) {
 		return nil, err
 	}
 
-	var configPresets configPresetsT
+	var configPresets configPresets
 	err = json.Unmarshal(data, &configPresets)
 	if err != nil {
 		return nil, err
