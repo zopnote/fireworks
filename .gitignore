@@ -1,8 +1,5 @@
-/cmake-build/
-/cmake-out/
+
 /.vs/
 /.idea/
-/engine/renderer/pubspec.lock
-/engine/renderer/.dart_tool/
 /bin/
 /build/
