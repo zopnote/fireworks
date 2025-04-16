@@ -1,10 +1,4 @@
 {
-  "project": {
-    "copyright": "Copyright (c) 2025 Lenny Siebert. All rights reserved.\nFireworks is licensed under the terms of the GNU General Public License v3.0 (GPLv3) for open-source usage.\n",
-    "version": "0.1",
-    "description": "Modern cross-platform graphics engine framework.",
-    "channel": "dev"
-  },
   "artifacts": [
     {
       "name": "dart_sdk",

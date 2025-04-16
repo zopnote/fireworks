@@ -1,39 +1,51 @@
 package cache
 
 import (
-	"archive/zip"
 	"errors"
+	"fireworks/internal/source"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 )
 
+type ArtifactOrigin int
+
+const (
+	None                     ArtifactOrigin = 0
+	LocalInnerFolderUnzipped ArtifactOrigin = 1
+	LocalUnzipped            ArtifactOrigin = 2
+	Local                    ArtifactOrigin = 3
+	UrlInnerFolderUnzipped   ArtifactOrigin = 4
+	UrlUnzipped              ArtifactOrigin = 5
+	Url                      ArtifactOrigin = 6
+)
+
 type Artifact struct {
-	ParentBundle       Bundle `json:"-"`
-	Identifier         string `json:"artifact_identifier"`
-	IsArchive          bool   `json:"is_archive"`
-	IsVendorUrl        bool   `json:"is_vendor_url"`
-	VendorUrl          string `json:"vendor_url"`
-	IsVendorFile       bool   `json:"is_vendor_file"`
-	VendorFile         string `json:"vendor_file"`
-	RelativeBundlePath string `json:"relative_bundle_path"`
+	ParentBundle Bundle         `json:"-"`
+	Identifier   string         `json:"identifier"`
+	Origin       ArtifactOrigin `json:"origin"`
+	Vendor       string         `json:"vendor"`
 }
 
-func (artifact *Artifact) SetOriginFromUrl(unzip bool, url string) {
-	artifact.IsVendorUrl = true
-	artifact.VendorUrl = url
-	artifact.IsArchive = unzip
-	artifact.IsVendorFile = false
-	artifact.VendorFile = ""
+func (artifact *Artifact) IsOriginArchive() bool {
+	switch artifact.Origin {
+	case Url:
+	case Local:
+		return false
+	}
+	return true
 }
 
-func (artifact *Artifact) SetOriginFromFile(path string) {
-	artifact.IsVendorUrl = false
-	artifact.VendorUrl = ""
-	artifact.IsArchive = false
-	artifact.IsVendorFile = true
-	artifact.VendorFile = path
+func (artifact *Artifact) IsOriginLocal() bool {
+	if artifact.Origin < UrlInnerFolderUnzipped {
+		return true
+	}
+	return false
+}
+
+func (artifact *Artifact) SetOrigin(originPreset ArtifactOrigin, origin string) {
+	artifact.Origin = originPreset
+	artifact.Vendor = origin
 }
 
 func (artifact *Artifact) Path() string {
@@ -49,160 +61,66 @@ func (artifact *Artifact) RenewFromOrigin() error {
 			return err
 		}
 	}
-	err = artifact.EnsureAvailable()
+	err = artifact.MakeAvailable()
 	return err
 }
 
-func (artifact *Artifact) EnsureAvailable() error {
-	lastArtifactPath := artifact.Path()
-	_, err := os.Stat(lastArtifactPath)
+func (artifact *Artifact) MakeAvailable() error {
+	_, err := os.Stat(artifact.Path())
 	if err == nil {
 		return nil
 	}
-	if artifact.IsVendorFile {
-		if artifact.VendorFile == "" {
-			return errors.New("the vendor path is empty")
-		}
-		source, err := os.Open(artifact.VendorFile)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = source.Close() }()
 
-		destination, err := os.OpenFile(lastArtifactPath, os.O_WRONLY, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = destination.Close() }()
-
-		_, err = io.Copy(source, destination)
-		if err != nil {
-			return err
-		}
-		return nil
+	if artifact.Origin == 0 {
+		return errors.New("artifact has no origin")
 	}
-	if artifact.IsVendorUrl {
-		if artifact.VendorUrl == "" {
-			return errors.New("the vendor url is empty")
+	if artifact.Vendor == "" {
+		return errors.New("the vendor reference is empty")
+	}
+
+	path := artifact.Path()
+
+	if artifact.IsOriginArchive() {
+		path = filepath.Join(artifact.ParentBundle.Path, "cache", artifact.Identifier)
+		err = os.MkdirAll(filepath.Join(artifact.ParentBundle.Path, "cache"), 0666)
+		if err != nil {
+			return err
 		}
-		if artifact.IsArchive {
-			lastArtifactPath = filepath.Join(artifact.ParentBundle.Path, "download", artifact.Identifier)
-			err = os.MkdirAll(filepath.Join(artifact.ParentBundle.Path, "download"), 0666)
+	}
+
+	_, err = os.Stat(path)
+	if err != nil {
+		if artifact.IsOriginLocal() {
+			source, err := os.Open(artifact.Vendor)
 			if err != nil {
 				return err
 			}
-		}
-		_, err = os.Stat(lastArtifactPath)
-		if err != nil {
-			err = downloadFromUrl(artifact.VendorUrl, lastArtifactPath)
+			defer func() { _ = source.Close() }()
+
+			destination, err := os.Create(path)
+			if err != nil {
+				return err
+			}
+
+			defer func() { _ = destination.Close() }()
+
+			_, err = io.Copy(destination, source)
+			if err != nil {
+				return err
+			}
+			path = destination.Name()
+		} else {
+			err = source.DownloadFromUrl(artifact.Vendor, path)
 			if err != nil {
 				return errors.Join(errors.New("can't download artifact"), err)
 			}
 		}
-		if artifact.IsArchive {
-			err = unzip(lastArtifactPath, true, artifact.Path())
-			if err != nil {
-				return errors.Join(errors.New("failed to unzip archive"), err)
-			}
-		}
-		return nil
 	}
-	return errors.New("artifact has no origin")
-}
-
-func downloadFromUrl(url string, outputFile string) error {
-	output, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-
-	defer func(output *os.File) {
-		_ = output.Close()
-	}(output)
-
-	response, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-	}(response.Body)
-
-	_, err = io.Copy(output, response.Body)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func unzip(sourceArchive string, removeFirstFolder bool, destination string) error {
-	reader, err := zip.OpenReader(sourceArchive)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := reader.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	err = os.MkdirAll(destination, 0755)
-	if err != nil {
-		return err
-	}
-
-	extractAndWriteFile := func(entity *zip.File) error {
-		entityReader, err := entity.Open()
+	if artifact.IsOriginArchive() {
+		err = source.Unzip(path, artifact.Path(), artifact.Origin == 1 || artifact.Origin == 4)
 		if err != nil {
-			return err
-		}
-		defer func() { _ = entityReader.Close() }()
-
-		cutIndex := 0
-		if removeFirstFolder {
-			for i, char := range entity.Name {
-				if char == '/' || char == '\\' {
-					cutIndex = i
-					break
-				}
-			}
-		}
-
-		unpackedDestination := filepath.Join(destination, entity.Name[cutIndex:])
-		if entity.FileInfo().IsDir() {
-			return nil
-		}
-
-		err = os.MkdirAll(filepath.Dir(unpackedDestination), entity.Mode())
-		if err != nil {
-			return err
-		}
-
-		f, err := os.OpenFile(unpackedDestination, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, entity.Mode())
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := f.Close(); err != nil {
-				panic(err)
-			}
-		}()
-
-		_, err = io.Copy(f, entityReader)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	for _, file := range reader.File {
-		err := extractAndWriteFile(file)
-		if err != nil {
-			return err
+			return errors.Join(errors.New("failed to unzip archive"), err)
 		}
 	}
-
 	return nil
 }

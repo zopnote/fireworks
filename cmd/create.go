@@ -86,7 +86,7 @@ var createCmd = &cobra.Command{
 
 func init() {
 
-	dataPath, err := internal.GetDataPath()
+	dataPath, err := source.GetDataPath()
 	if err != nil {
 		message := fmt.Sprintf("Fatal error occurred while tried to get the applications internal data: %s", err)
 

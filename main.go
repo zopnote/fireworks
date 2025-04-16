@@ -7,8 +7,7 @@ package main
 
 import (
 	cmd "fireworks/cmd"
-	"fireworks/internal/source/cache"
-	"fmt"
+	cache2 "fireworks/internal/source/cache"
 	"os"
 	"path/filepath"
 )
@@ -16,28 +15,55 @@ import (
 func main() {
 	executablePath, err := os.Executable()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "os.Executable is an error occurred: %v", err)
-		os.Exit(1)
+		panic(err)
 	}
-	cachePath := filepath.Join(filepath.Dir(executablePath), "cache")
-	bundle, err := cache.InitBundleAt(cachePath)
+	cachePath := filepath.Join(filepath.Dir(executablePath), "vendor")
+
+	bundle, err := cache2.InitBundle(cachePath)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "cache.InitBundleAt is an error occurred: %v", err)
-		os.Exit(1)
+		panic(err)
 	}
-	artifact := bundle.InitArtifact("dart_sdk")
-	if artifact.EnsureAvailable() != nil {
-		artifact.SetOriginFromUrl(true, "https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.2/sdk/dartsdk-windows-x64-release.zip")
-		err = artifact.RenewFromOrigin()
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "artifact.RenewFromOrigin is an error occurred: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = bundle.Save()
+
+	artifact := bundle.InitArtifact("dart-sdk-3.7.2")
+
+	err = artifact.MakeAvailable()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "bundle.Save is an error occurred: %v", err)
-		os.Exit(1)
+		artifact.SetOrigin(
+			cache2.UrlInnerFolderUnzipped,
+			"https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.2/sdk/dartsdk-windows-x64-release.zip",
+		)
+		_ = artifact.MakeAvailable()
 	}
+
+	artifact = bundle.InitArtifact("cmake-4.0.1")
+
+	err = artifact.MakeAvailable()
+	if err != nil {
+		artifact.SetOrigin(
+			cache2.UrlInnerFolderUnzipped,
+			"https://github.com/Kitware/CMake/releases/download/v4.0.1/cmake-4.0.1-windows-x86_64.zip",
+		)
+		_ = artifact.MakeAvailable()
+	}
+	_ = bundle.Save()
+
+	cachePath = filepath.Join(filepath.Dir(executablePath), "internal")
+	bundle, err = cache2.InitBundle(cachePath)
+	if err != nil {
+		panic(err)
+	}
+	artifact = bundle.InitArtifact("data")
+
+	dataPath := filepath.Join(filepath.Dir(filepath.Dir(executablePath)), "internal", "data.zip")
+	err = artifact.MakeAvailable()
+	if err != nil {
+		artifact.SetOrigin(
+			cache2.LocalInnerFolderUnzipped,
+			dataPath,
+		)
+		_ = artifact.MakeAvailable()
+	}
+
+	_ = bundle.Save()
 	cmd.Execute()
 }
