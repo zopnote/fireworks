@@ -8,6 +8,7 @@ package main
 import (
 	cmd "fireworks/cmd"
 	"fireworks/internal/source/bundle"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -26,24 +27,20 @@ func main() {
 
 	artifact := bundle.InitArtifact("dart-sdk-3.7.2")
 
-	err = artifact.MakeAvailable()
-	if err != nil {
-		artifact.SetOrigin(
-			internal.UrlInnerFolderUnzipped,
-			"https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.2/sdk/dartsdk-windows-x64-release.zip",
-		)
-		_ = artifact.MakeAvailable()
-	}
+	artifact.SetOrigin(
+		internal.UrlInnerFolderUnzipped,
+		"https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.2/sdk/dartsdk-windows-x64-release.zip",
+	)
+	_ = artifact.MakeAvailable()
 
 	artifact = bundle.InitArtifact("cmake-4.0.1")
-
+	artifact.SetOrigin(
+		internal.UrlInnerFolderUnzipped,
+		"https://github.com/Kitware/CMake/releases/download/v4.0.1/cmake-4.0.1-windows-x86_64.zip",
+	)
 	err = artifact.MakeAvailable()
 	if err != nil {
-		artifact.SetOrigin(
-			internal.UrlInnerFolderUnzipped,
-			"https://github.com/Kitware/CMake/releases/download/v4.0.1/cmake-4.0.1-windows-x86_64.zip",
-		)
-		_ = artifact.MakeAvailable()
+		fmt.Printf("%v", err)
 	}
 	_ = bundle.Save()
 	_ = bundle.CleanCache()

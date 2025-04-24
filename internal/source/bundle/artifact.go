@@ -73,10 +73,10 @@ func (artifact *Artifact) MakeAvailable() error {
 	}
 
 	if artifact.Origin == 0 {
-		return errors.New("artifact has no origin")
+		return errors.New("artifact has no origin ")
 	}
 	if artifact.Vendor == "" {
-		return errors.New("the vendor reference is empty")
+		return errors.New("the vendor reference is empty ")
 	}
 
 	path := artifact.Path()

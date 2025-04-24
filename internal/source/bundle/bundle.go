@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -89,17 +90,28 @@ func (bundle *Bundle) Save() error {
 
 func (bundle *Bundle) CacheRoot() (string, error) {
 	cacheRoot := filepath.Join(bundle.Path, "cache")
-	info, err := os.Stat(cacheRoot)
+	cacheExists, err := exists(cacheRoot)
 	if err != nil {
-		mkDirErr := os.Mkdir(cacheRoot, 0666)
-		if mkDirErr != nil {
-			return cacheRoot, errors.Join(errors.New("can't create cache directory"), err, mkDirErr)
+		return cacheRoot, errors.Join(errors.New("can't create cache directory"), err)
+	}
+	if !cacheExists {
+		err = os.MkdirAll(cacheRoot, 0750)
+		if err != nil {
+			return cacheRoot, errors.Join(errors.New("can't create cache directory"), err)
 		}
 	}
-	if err == nil && !info.IsDir() {
-		return cacheRoot, errors.New("the bundles cache isn't a directory")
-	}
 	return cacheRoot, nil
+}
+
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
 }
 
 func (bundle *Bundle) CleanCache() error {
