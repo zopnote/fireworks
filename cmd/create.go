@@ -8,7 +8,7 @@ package fireworks
 
 import (
 	"errors"
-	"fireworks/internal/source"
+	internal "fireworks/internal/source"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -86,7 +86,7 @@ var createCmd = &cobra.Command{
 
 func init() {
 
-	dataPath, err := source.GetDataPath()
+	dataPath, err := internal.GetDataPath()
 	if err != nil {
 		message := fmt.Sprintf("Fatal error occurred while tried to get the applications internal data: %s", err)
 

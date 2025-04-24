@@ -7,7 +7,7 @@ package main
 
 import (
 	cmd "fireworks/cmd"
-	cache2 "fireworks/internal/source/cache"
+	"fireworks/internal/source/bundle"
 	"os"
 	"path/filepath"
 )
@@ -19,7 +19,7 @@ func main() {
 	}
 	cachePath := filepath.Join(filepath.Dir(executablePath), "vendor")
 
-	bundle, err := cache2.InitBundle(cachePath)
+	bundle, err := internal.InitBundle(cachePath)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +29,7 @@ func main() {
 	err = artifact.MakeAvailable()
 	if err != nil {
 		artifact.SetOrigin(
-			cache2.UrlInnerFolderUnzipped,
+			internal.UrlInnerFolderUnzipped,
 			"https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.2/sdk/dartsdk-windows-x64-release.zip",
 		)
 		_ = artifact.MakeAvailable()
@@ -40,25 +40,26 @@ func main() {
 	err = artifact.MakeAvailable()
 	if err != nil {
 		artifact.SetOrigin(
-			cache2.UrlInnerFolderUnzipped,
+			internal.UrlInnerFolderUnzipped,
 			"https://github.com/Kitware/CMake/releases/download/v4.0.1/cmake-4.0.1-windows-x86_64.zip",
 		)
 		_ = artifact.MakeAvailable()
 	}
 	_ = bundle.Save()
+	_ = bundle.CleanCache()
 
 	cachePath = filepath.Join(filepath.Dir(executablePath), "internal")
-	bundle, err = cache2.InitBundle(cachePath)
+	bundle, err = internal.InitBundle(cachePath)
 	if err != nil {
 		panic(err)
 	}
 	artifact = bundle.InitArtifact("data")
 
-	dataPath := filepath.Join(filepath.Dir(filepath.Dir(executablePath)), "internal", "data.zip")
+	dataPath := filepath.Join(filepath.Dir(filepath.Dir(executablePath)), "internal", "data")
 	err = artifact.MakeAvailable()
 	if err != nil {
 		artifact.SetOrigin(
-			cache2.LocalInnerFolderUnzipped,
+			internal.Local,
 			dataPath,
 		)
 		_ = artifact.MakeAvailable()

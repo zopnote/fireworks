@@ -1,4 +1,4 @@
-package cache
+package internal
 
 import (
 	"encoding/json"
@@ -85,4 +85,28 @@ func (bundle *Bundle) Save() error {
 		return errors.Join(errors.New("failed to write bundle specification"), err)
 	}
 	return nil
+}
+
+func (bundle *Bundle) CacheRoot() (string, error) {
+	cacheRoot := filepath.Join(bundle.Path, "cache")
+	info, err := os.Stat(cacheRoot)
+	if err != nil {
+		mkDirErr := os.Mkdir(cacheRoot, 0666)
+		if mkDirErr != nil {
+			return cacheRoot, errors.Join(errors.New("can't create cache directory"), err, mkDirErr)
+		}
+	}
+	if err == nil && !info.IsDir() {
+		return cacheRoot, errors.New("the bundles cache isn't a directory")
+	}
+	return cacheRoot, nil
+}
+
+func (bundle *Bundle) CleanCache() error {
+	cacheRoot, err := bundle.CacheRoot()
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(cacheRoot)
+	return err
 }

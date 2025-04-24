@@ -13,11 +13,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "fireworks",
-	Short: "Fireworks is a modern cross-platform graphics engine framework.",
-	Long: "Fireworks is a 3d engine framework with focus on a modern development " +
-		"cycle. It serves an environment for creating games and other realtime 3d applications " +
-		"as well as shipping these projects to multiple platforms. ",
+	Use:    "fireworks",
+	Short:  "Manage your Fireworks development.",
 	Hidden: true,
 	CompletionOptions: cobra.CompletionOptions{
 		HiddenDefaultCmd: true,

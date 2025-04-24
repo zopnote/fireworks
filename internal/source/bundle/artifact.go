@@ -1,8 +1,9 @@
-package cache
+package internal
 
 import (
 	"errors"
-	"fireworks/internal/source"
+	internal "fireworks/internal/source"
+	"github.com/plus3it/gorecurcopy"
 	"io"
 	"os"
 	"path/filepath"
@@ -81,43 +82,55 @@ func (artifact *Artifact) MakeAvailable() error {
 	path := artifact.Path()
 
 	if artifact.IsOriginArchive() {
-		path = filepath.Join(artifact.ParentBundle.Path, "cache", artifact.Identifier)
-		err = os.MkdirAll(filepath.Join(artifact.ParentBundle.Path, "cache"), 0666)
+		cacheRoot, err := artifact.ParentBundle.CacheRoot()
 		if err != nil {
 			return err
 		}
+		path = filepath.Join(cacheRoot, artifact.Identifier)
 	}
 
 	_, err = os.Stat(path)
 	if err != nil {
 		if artifact.IsOriginLocal() {
-			source, err := os.Open(artifact.Vendor)
+			info, err := os.Stat(artifact.Vendor)
 			if err != nil {
 				return err
 			}
-			defer func() { _ = source.Close() }()
+			if info.IsDir() {
+				err := gorecurcopy.CopyDirectory(artifact.Vendor, path)
+				if err != nil {
+					return err
+				}
+			} else {
+				source, err := os.Open(artifact.Vendor)
+				if err != nil {
+					return err
+				}
+				defer func() { _ = source.Close() }()
 
-			destination, err := os.Create(path)
-			if err != nil {
-				return err
+				destination, err := os.Create(path)
+				if err != nil {
+					return err
+				}
+
+				defer func() { _ = destination.Close() }()
+
+				_, err = io.Copy(destination, source)
+				if err != nil {
+					return err
+				}
+				path = destination.Name()
 			}
 
-			defer func() { _ = destination.Close() }()
-
-			_, err = io.Copy(destination, source)
-			if err != nil {
-				return err
-			}
-			path = destination.Name()
 		} else {
-			err = source.DownloadFromUrl(artifact.Vendor, path)
+			err = internal.DownloadFromUrl(artifact.Vendor, path)
 			if err != nil {
 				return errors.Join(errors.New("can't download artifact"), err)
 			}
 		}
 	}
 	if artifact.IsOriginArchive() {
-		err = source.Unzip(path, artifact.Path(), artifact.Origin == 1 || artifact.Origin == 4)
+		err = internal.Unzip(path, artifact.Path(), artifact.Origin == 1 || artifact.Origin == 4)
 		if err != nil {
 			return errors.Join(errors.New("failed to unzip archive"), err)
 		}
