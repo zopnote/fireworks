@@ -13,16 +13,21 @@
 //
 // 2. Commercial License:
 //    A commercial license will be available at a later time for use in commercial products.
+//
 
+//
+// Created by @zopnote on 12.05.2025.
+//
 
 #pragma once
 
 typedef struct {
-    void*
-} arena_t;
+    char* value;
+    int length;
+} str_t;
 
-arena_t arena_make();
+str_t str(char const str[static 1]);
 
-void* arena_alloc(arena_t arena[static 1], u64 size);
+int string_length(str_t);
 
-void* arena_free(arena_t arena[static 1]);
+

@@ -16,15 +16,15 @@
 
 #pragma once
 
-typedef __int64 i64;
-typedef __int32 i32;
-typedef __int16 i16;
-typedef __int8 i8;
+typedef __int64 i64_t;
+typedef __int32 i32_t;
+typedef __int16 i16_t;
+typedef __int8 i8_t;
 
-typedef unsigned __int64 u64;
-typedef unsigned __int32 u32;
-typedef unsigned __int16 u16;
-typedef unsigned __int8 u8;
+typedef unsigned __int64 u64_t;
+typedef unsigned __int32 u32_t;
+typedef unsigned __int16 u16_t;
+typedef unsigned __int8 u8_t;
 
-typedef float f32;
-typedef double f64;
+typedef float f32_t;
+typedef double f64_t;

@@ -14,5 +14,10 @@
 // 2. Commercial License:
 //    A commercial license will be available at a later time for use in commercial products.
 
+#include "lib.h"
 
-#pragma once
+error_t error_new(char const value[static 1]) {
+    return (error_t) {
+        .value = str(value)
+    };
+}

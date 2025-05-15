@@ -13,21 +13,23 @@
 //
 // 2. Commercial License:
 //    A commercial license will be available at a later time for use in commercial products.
-//
 
 //
-// Created by @zopnote on 12.05.2025.
+// Created by @zopnote on 14.05.2025.
 //
 
-#pragma once
 
-typedef struct {
-    char* value;
-    int length;
-} string_t;
-
-string_t string_create(const char* str);
-
-int string_length(const string_t);
+#include <stdio.h>
 
 
+#include "public/lib.h"
+#include "public/mem.h"
+#include "public/strings.h"
+
+int main() {
+    const expect(arena_t) arena = arena_new(64 * 4);
+    if (!arena.valid) {
+        printf("Error: %s", arena.error.value.value);
+    }
+    return 0;
+}
