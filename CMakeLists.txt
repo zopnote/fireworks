@@ -12,4 +12,4 @@ project(
 )
 
 
-add_subdirectory(packages/workc_lib)
+add_subdirectory(packages/firelibc)
