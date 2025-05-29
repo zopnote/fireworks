@@ -13,21 +13,28 @@
 //
 // 2. Commercial License:
 //    A commercial license will be available at a later time for use in commercial products.
-//
 
 //
-// Created by @zopnote on 12.05.2025.
+// Created by @zopnote on 14.05.2025.
 //
 
-#pragma once
-
-typedef struct {
-    char* value;
-    int length;
-} str_t;
-
-str_t str(char const str[static 1]);
-
-int string_length(str_t);
 
 
+#include <stdio.h>
+
+
+#include "../public/lib.h"
+void do_stuff(const u64ptr_t ptr) {
+    *ptr = *ptr + 1;
+}
+
+int main() {
+
+    const expect(u64ptr_t) num = new(u64_t, 12);
+    if (!num.nil) {
+        do_stuff(num.val + sizeof(u64_t));
+        printf("num.val: %llu", *num.val + sizeof(u64_t));
+        del(num.val);
+    }
+    return 0;
+}

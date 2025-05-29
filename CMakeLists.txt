@@ -12,4 +12,4 @@ project(
 )
 
 
-add_subdirectory(packages/firelibc)
+add_subdirectory(packages/cmatic)

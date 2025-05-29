@@ -17,20 +17,27 @@
 
 
 #pragma once
-
-#include "num.h"
 #include "lib.h"
 
 /**
  * An arena is a representation of a space in memory used to combine the lifetime
  * management of multiple variables to make memory management easier.
  */
-typedef struct {
-    u8_t* data;
-    u64_t size;
-    u64_t offset;
-} arena_t;
-define_expect(arena_t);
+typedef struct { u8_t* ptr; u64_t size; u64_t pos; } arena_t;
+typedef struct { char* err; arena_t val; bool nil; } expect_arena_t;
+typedef arena_t* arenaptr_t;
+typedef struct { char* err; arenaptr_t val; bool nil; }
+expect_arenaptr_t; inline expect_arenaptr_t new_arena_t(u64_t size, ...) {
+    __builtin_va_list args;
+    u64_t len = 0;
+    __builtin_va_start(args, 0);
+    len = __builtin_va_arg(args, u64_t);
+    __builtin_va_end(args);
+    void* ptr = alloc(size * len);
+    if (ptr) { *(arena_t*)ptr = (arena_t) {};
+        return (expect_arenaptr_t) { .val = (arenaptr_t)ptr, }; }
+    return (expect_arenaptr_t) { .nil = true, .err = "allocation failed" };
+};
 
 /**
  * @brief Wrapper around libc malloc to allocate block of memory.
@@ -64,4 +71,10 @@ expect(voidptr_t) arena_alloc(arena_t arena[static 1], u64_t size);
  * @brief Frees the memory of the arena. 
  * @param arena The arena that should be freed.
  */
-void arena_dispose(arena_t arena[static 1]);
+void arena_del(arena_t arena[static 1]);
+
+/**
+ * @brief Frees the memory of the arena.
+ * @param arena The arena that should be freed.
+ */
+void arena_reset(arena_t arena[static 1]);
