@@ -1,0 +1,3 @@
+[submodule "packages/cmatic/vendor/klib"]
+	path = packages/cmatic/vendor/klib
+	url = https://github.com/attractivechaos/klib.git

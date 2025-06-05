@@ -1,0 +1,25 @@
+{
+  "asset_version": "1.0",
+  "type": "world",
+  "compression": true,
+  "shader_bake": true,
+  "optimizing": true,
+  "cascade_streaming": true,
+  "objects": [
+    {
+      "name": "floor",
+      "derived": "plane",
+      "collision": true,
+      "collision_mesh": { "use_render_mesh": true },
+      "scale": { "x": 5, "y": 5, "z": 5 },
+      "children": [
+        {
+          "name": "tree1",
+          "derived": "tree",
+          "collision": true,
+          "scale": { "x": 2, "y": 3, "z": 2 }
+        }
+      ]
+    }
+  ]
+}

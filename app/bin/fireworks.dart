@@ -15,3 +15,15 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
+
+import 'package:fireworks/command/command.dart';
+import 'package:fireworks/command/root.dart';
+
+void main(List<String> args) async {
+  CommandError? err = await rootCommand.execute(args);
+  if (err != null) {
+    if (err.syntax) print(err.executedCmd.syntax());
+    if (err.errorMessage != null) print("\nError occurred: " + err.errorMessage!);
+  }
+}
+

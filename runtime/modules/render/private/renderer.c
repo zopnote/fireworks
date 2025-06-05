@@ -13,3 +13,12 @@
 // 2. Commercial License:
 //    A commercial license will be available at a later time for use in commercial products.
 
+#include <fireworks_module.h>
+
+module {
+  name = "render",
+  dependencies = {
+    "main", 1.0,
+    "platform", 1.0
+  }
+}

@@ -60,7 +60,7 @@ bool work_dir(char* buffer, size_t buffer_size);
 
 
 /**
- * @brief Gets the directory the executable is in.
+ * @brief Gets the directory the execute is in.
  *
  * @param buffer The buffer the path will be written to.
  * @param buffer_size Size of the buffer.
