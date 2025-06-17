@@ -1,9 +1,9 @@
 name: fireworks
-version: 0.1.0
-description: Fireworks command line interface tooling
-repository: github.com/zopnote/fireworks
-publish_to: "none"
+description: Fireworks command line tooling
+version: 1.0.0
+
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.7.2
+
 dependencies:
   path: ^1.9.1
