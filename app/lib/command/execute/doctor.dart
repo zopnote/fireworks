@@ -17,10 +17,10 @@
 
 import 'dart:io';
 
-import 'package:fireworks/runner.dart';
+import 'package:fireworks/command/runner.dart';
 import 'package:path/path.dart' as path;
 
-CommandResponse doctor(Command cur, String argument, List<Flag> flags) {
+CommandResponse doctor(Command cur, String arg, List<Flag> flags) {
   stdout.writeln("Health of the fireworks tooling:");
   final String varSeperator = Platform.isWindows ? ";" : ":";
   final String exeExtension = Platform.isWindows ? ".exe" : ":";

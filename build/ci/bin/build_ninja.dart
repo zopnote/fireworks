@@ -15,9 +15,3 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'dart:io';
-import 'package:path/path.dart' as path;
-
-final class Environment {
-  String clangPath
-}
