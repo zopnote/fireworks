@@ -15,6 +15,48 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-void main() {
-  
+import 'dart:io';
+
+import 'package:fireworks_ci_scripts/fireworks_script.dart';
+import 'package:path/path.dart' as path;
+
+Future<void> main() async {
+  const String depotRepository = "https://chromium.googlesource.com/chromium/tools/depot_tools.git";
+  if (!ensureRequiredPrograms(["cmake", "git", "python"])) {
+    stderr.writeln(
+      "\nPlease ensure the availability of all dependencies to proceed.",
+    );
+    return;
+  }
+  final String scriptName = path.basenameWithoutExtension(Platform.script.path);
+  final Directory workDirectory = Platform.isWindows
+      ? Directory(
+    "${path.join(path.dirname(Platform.script.path), scriptName).substring(1)}",
+  )
+      : Directory(
+    "${path.join(path.dirname(Platform.script.path), scriptName)}",
+  );
+  await workDirectory.create(recursive: true);
+
+  if (!(await Directory(
+    path.join(
+      workDirectory.path,
+      path.basenameWithoutExtension(depotRepository),
+    ),
+  ).exists())) {
+    await executeProcess(workDirectory.path, "git", [
+      "clone",
+      depotRepository,
+    ]);
+  }
+  if (Platform.isMacOS) await executeProcess(
+      workDirectory.path, "sudo", [
+    "xcode",
+    "-select",
+    "-s",
+    "/Applications/Xcode.app/Contents/Developer"
+  ]);
+
+  final String system = Platform.version.split('\"')[1];
+
 }

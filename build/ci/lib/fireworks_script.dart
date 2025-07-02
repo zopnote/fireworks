@@ -16,6 +16,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
@@ -32,7 +33,7 @@ bool ensureRequiredPrograms(List<String> envPrograms) {
     final String varSeperator = Platform.isWindows ? ";" : ":";
     final String exeExtension = Platform.isWindows ? ".exe" : ":";
     final List<String> envPaths = Platform.environment["PATH"]?.split(varSeperator) ?? [];
-    stdout.writeln("Check for programs in path environment variable...");
+    stdout.writeln("Check for programs in the environment...");
     bool allAvailable = true;
     for (String program in envPrograms) {
       bool found = false;
@@ -40,7 +41,10 @@ bool ensureRequiredPrograms(List<String> envPrograms) {
         if (File("$envPath${path.separator}$program$exeExtension").existsSync())
           found = true;
       }
-
+      if (!found) {
+        final result = Process.runSync(program, [], runInShell: true, includeParentEnvironment: true, );
+        if (result.exitCode == 0) found = true;
+      }
       final int space = 20 - program.length;
 
       if (found) stdout.writeln("$program" + (" " * space) + "FOUND");
@@ -88,9 +92,6 @@ Future<bool> executeProcess(String workDir, String command, List<String> args, {
     }
   });
 
-  final spinner = Spinner();
-  if (description != null) message = description;
-  spinner.start(message);
 
   try {
     final process = await Process.start(
@@ -98,35 +99,22 @@ Future<bool> executeProcess(String workDir, String command, List<String> args, {
       args,
       workingDirectory: workDir,
     );
-
-    var lastLine = StringBuffer();
-
-    process.stdout.transform(utf8.decoder).listen((data) {
-      spinner.stop();
-      stdout.write(data);
-      if (data.trim().isNotEmpty) {
-        lastLine.clear();
-        lastLine.write(data.trim().split('\n').last);
-      }
-      spinner.start('$message (${lastLine.toString()})');
+    String fullCommand = command;
+    args.forEach((arg) {
+      fullCommand = fullCommand + " $arg";
     });
+    stdout.writeln(fullCommand);
+    void Function(String) stdListen = (data) {
+      stdout.writeln(data.trim().split('\n').last);
+    };
+    process.stdout.transform(utf8.decoder).listen(stdListen);
 
-    process.stderr.transform(utf8.decoder).listen((data) {
-      spinner.stop();
-      stderr.write(data);
-      if (data.trim().isNotEmpty) {
-        lastLine.clear();
-        lastLine.write(data.trim().split('\n').last);
-      }
-      spinner.start('$message (${lastLine.toString()})');
-    });
+    process.stderr.transform(utf8.decoder).listen(stdListen);
 
     final exitCode = await process.exitCode;
-    spinner.stop();
     return exitCode == 0;
 
   } catch (e) {
-    spinner.stop();
     stderr.writeln('\nFehler: $e');
     return false;
   }

@@ -22,10 +22,15 @@ import 'package:path/path.dart' as path;
 
 Future<void> main() async {
   const String clangRepository = "https://github.com/llvm/llvm-project.git";
-  ensureRequiredPrograms(["cmake", "git", "python"]);
+  if (!ensureRequiredPrograms(["cmake", "git", "python"])) {
+    stderr.writeln(
+      "\nPlease ensure the availability of all dependencies to proceed.",
+    );
+    return;
+  }
 
-  String scriptName = path.basenameWithoutExtension(Platform.script.path);
-  Directory workDirectory = Platform.isWindows
+  final String scriptName = path.basenameWithoutExtension(Platform.script.path);
+  final Directory workDirectory = Platform.isWindows
       ? Directory(
           "${path.join(path.dirname(Platform.script.path), scriptName).substring(1)}",
         )
@@ -34,46 +39,51 @@ Future<void> main() async {
         );
   await workDirectory.create(recursive: true);
 
-
   if (!(await Directory(
     path.join(
       workDirectory.path,
       path.basenameWithoutExtension(clangRepository),
     ),
   ).exists())) {
-    await executeProcess(workDirectory.path, "git", ["clone", "-b", "release/20.x", "--single-branch", "--depth", "1", clangRepository]);
+    await executeProcess(workDirectory.path, "git", [
+      "clone",
+      "-b",
+      "release/20.x",
+      "--single-branch",
+      "--depth",
+      "1",
+      clangRepository,
+    ]);
   }
 
   await Directory("${workDirectory.path}/cmake").create(recursive: true);
-  await Directory("${workDirectory.path}/out").create(recursive: true);
   if (!(await Directory("${workDirectory.path}/cmake/CMakeFiles").exists()))
+    await executeProcess(workDirectory.path, "cmake", [
+      "-S",
+      "${workDirectory.path}/llvm-project/llvm",
+      "-B",
+      "${workDirectory.path}/cmake",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DLLVM_ENABLE_PDB=OFF",
+      "-DLLVM_BUILD_TOOLS=OFF",
+      "-DLLVM_ENABLE_DIA_SDK=OFF",
+      "-DLLVM_ENABLE_PDB=OFF",
+      "-DCMAKE_INSTALL_PREFIX=${workDirectory.path}/clang-newest",
+      "-DLLVM_ENABLE_PROJECTS=clang",
+      "-DLLVM_TARGETS_TO_BUILD=X86;AArch64",
+    ], description: "Generate build files of llvm...");
   await executeProcess(workDirectory.path, "cmake", [
-    "-S", "${workDirectory.path}/llvm-project/llvm",
-    "-B", "${workDirectory.path}/cmake",
-    "-DCMAKE_INSTALL_PREFIX=${workDirectory.path}/out",
-    "-DLLVM_ENABLE_PROJECTS=clang;clang-tools-extra",
-    "-DLLVM_TARGETS_TO_BUILD=X86;AArch64",
-    "-DLLVM_ENABLE_ASSERTIONS=ON",
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DLLVM_USE_LINKER=gold",
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DLLVM_BUILD_STATIC=OFF",
-    "-DLLVM_ENABLE_WARNINGS=OFF",
-    "-DCLANG_ENABLE_STATIC_ANALYZER=ON",
-    "-DLLVM_DISABLE_STATIC_LIBRARIES=ON",
-    "-DCLANG_ENABLE_ARCMT=OFF",
-    "-DLLVM_ENABLE_TERMINFO=OFF",
-    "-DLLVM_ENABLE_LIBEDIT=OFF",
-    "-DLLVM_ENABLE_ZLIB=OFF",
-    "-DLLVM_INCLUDE_TESTS=OFF",
-    "-DLLVM_INCLUDE_EXAMPLES=OFF",
-    "-DLLVM_INCLUDE_BENCHMARKS=OFF",
-    "-DLLVM_BUILD_TOOLS=OFF",
-    "-DLLVM_ENABLE_BINDINGS=OFF"
-  ],
-  description: "Generate build files of llvm..."
-  );
-  await executeProcess(workDirectory.path, "cmake", ["--build", "${workDirectory.path}/cmake"]);
-  await executeProcess(workDirectory.path, "cmake", ["--install", "${workDirectory.path}/cmake"]);
+    "--build",
+    "${workDirectory.path}/cmake",
+    "--config",
+    "Release",
+  ]);
 
+  await Directory(
+    "${workDirectory.path}/clang-newest",
+  ).create(recursive: true);
+  await executeProcess(workDirectory.path, "cmake", [
+    "--install",
+    "${workDirectory.path}/cmake",
+  ]);
 }
