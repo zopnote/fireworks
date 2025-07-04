@@ -1,4 +1,4 @@
-name: fireworks_ci_scripts
+name: fireworks_scripts
 description: Continuous integration scripts of the Fireworks engine.
 version: 1.0.0
 publish_to: "none"

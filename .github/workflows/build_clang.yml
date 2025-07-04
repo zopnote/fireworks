@@ -12,11 +12,6 @@ jobs:
       - name: Repository checkout
         uses: actions/checkout@v4
 
-      - name: Install git
-        run: | 
-          sudo apt-get update
-          sudo apt-get install git
-
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
 
