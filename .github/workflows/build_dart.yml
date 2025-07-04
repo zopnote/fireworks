@@ -14,6 +14,8 @@ jobs:
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.8.0'
 
       - name: Pub get
         run: dart pub get
