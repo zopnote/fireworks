@@ -1,0 +1,8 @@
+name: fireworks_ci_scripts
+description: Continuous integration scripts of the Fireworks engine.
+version: 1.0.0
+publish_to: "none"
+environment: 
+  sdk: ^3.8.0
+dependencies:
+  path: ^1.9.1
