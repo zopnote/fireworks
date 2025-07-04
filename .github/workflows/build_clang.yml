@@ -6,11 +6,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
       - name: Repository checkout
         uses: actions/checkout@v4
+
+      - name: Install git
+        run: | 
+          sudo apt-get update
+          sudo apt-get install git
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
