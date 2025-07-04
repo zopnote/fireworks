@@ -1,21 +1,19 @@
-name: build_dart.yml
+name: Build Dart sdk
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
+
     steps:
       - name: Repository checkout
         uses: actions/checkout@v4
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          sdk: '3.8.0'
 
       - name: Pub get
         run: dart pub get
@@ -23,3 +21,10 @@ jobs:
 
       - name: Build process
         run: dart run ./build/ci/bin/build_dart_sdk.dart
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-newest
+          path: ./build/ci/bin/build_dart_sdk/dart-newest
+
