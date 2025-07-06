@@ -24,21 +24,19 @@ import 'package:path/path.dart' as path;
 const String repository = "https://github.com/llvm/llvm-project.git";
 const List<String> requiredPrograms = const ["cmake", "git", "python"];
 
-
-final String scriptName = path.basenameWithoutExtension(Platform.script.path);
 final String repositoryName = path.basenameWithoutExtension(repository);
 
 final String buildFilesDirectoryPath = path.join(
-  environment.currentDirectory,
-  "$repositoryName-${environment.system}-cmake-build",
+  environment.outputDirectory,
+  "build-$repositoryName-${environment.system}",
 );
+
 
 final String repositoryDirectoryPath = path.join(
-  environment.currentDirectory,
-  repositoryName,
+  buildFilesDirectoryPath, repositoryName,
 );
 
-final String outputDirectoryPath = path.join(
+final String binaryOutputDirectoryPath = path.join(
   environment.outputDirectory, "artifacts",
   "$repositoryName-${environment.system}"
 );
@@ -52,10 +50,11 @@ Future<int> main(List<String> args) async {
     return 1;
   }
 
-  await Directory(workDirectoryPath).create(recursive: true);
+
+  await Directory(buildFilesDirectoryPath).create(recursive: true);
 
   if (!Directory(repositoryDirectoryPath).existsSync()) {
-    await executeProcess(workDirectoryPath, "git", [
+    await executeProcess(buildFilesDirectoryPath, "git", [
       "clone",
       "-b release/20.x",
       "--single-branch",
@@ -64,13 +63,11 @@ Future<int> main(List<String> args) async {
     ], exitOnFail: true);
   }
 
-  await Directory("$buildFilesDirectoryPath").create(recursive: true);
-
   if (!Directory("$buildFilesDirectoryPath/CMakeFiles").existsSync()) {
-    await executeProcess(workDirectoryPath, "cmake", [
+    await executeProcess(environment.currentDirectory, "cmake", [
       "-S $repositoryDirectoryPath/llvm",
       "-B $buildFilesDirectoryPath",
-      "-DCMAKE_INSTALL_PREFIX=$outputDirectoryPath",
+      "-DCMAKE_INSTALL_PREFIX=$binaryOutputDirectoryPath",
 
       "-DCMAKE_BUILD_TYPE=Release",
       "-DLLVM_ENABLE_PDB=OFF",
@@ -82,17 +79,17 @@ Future<int> main(List<String> args) async {
     ], exitOnFail: true);
   }
 
-  await executeProcess(workDirectoryPath, "cmake", [
+  await executeProcess(buildFilesDirectoryPath, "cmake", [
     "--build $buildFilesDirectoryPath",
     "--config Release",
   ], exitOnFail: true);
 
-  await Directory("$outputDirectoryPath").create(recursive: true);
+  await Directory("$binaryOutputDirectoryPath").create(recursive: true);
 
-  await executeProcess(workDirectoryPath, "cmake", [
+  await executeProcess(buildFilesDirectoryPath, "cmake", [
     "--install $buildFilesDirectoryPath",
   ], exitOnFail: true);
 
-  stdout.writeln("\nArtifact output can be found in $outputDirectoryPath");
+  stdout.writeln("\nArtifact output can be found in '$binaryOutputDirectoryPath'");
   return 0;
 }

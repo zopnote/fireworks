@@ -22,6 +22,8 @@ final String system = Platform.version.split("\"")[1];
 final String systemProcessor = system.split("_").last;
 final String systemName = system.split("_").first;
 
+/// Notice that Platform.script is the script ran at initialization, not the script we are in.
+/// Therefore currentDirectory will be the directory of the script that initialized the entire tree of imports etc.
 String get currentDirectory {
   if (Platform.isWindows) {
     return path.dirname(Platform.script.path).substring(1);
@@ -29,19 +31,11 @@ String get currentDirectory {
   return path.dirname(Platform.script.path);
 }
 
-String get processDirectory {
-  const String prefix = "process-";
-
-}
-
 const String _entityAtRootLevel = ".git";
 String get rootDirectory {
   Directory rootDirectory = Directory(currentDirectory);
   while (true) {
-    List<FileSystemEntity> content = rootDirectory.listSync();
-    if (content.contains(
-      Directory(path.join(rootDirectory.path, _entityAtRootLevel)),
-    )) {
+    if (Directory(path.join(rootDirectory.path, _entityAtRootLevel)).existsSync()) {
       return rootDirectory.path;
     }
     rootDirectory = Directory(path.dirname(rootDirectory.path));
