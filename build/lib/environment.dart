@@ -18,6 +18,41 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
+final String system = Platform.version.split("\"")[1];
+final String systemProcessor = system.split("_").last;
+final String systemName = system.split("_").first;
+
+String get currentDirectory {
+  if (Platform.isWindows) {
+    return path.dirname(Platform.script.path).substring(1);
+  }
+  return path.dirname(Platform.script.path);
+}
+
+String get processDirectory {
+  const String prefix = "process-";
+
+}
+
+const String _entityAtRootLevel = ".git";
+String get rootDirectory {
+  Directory rootDirectory = Directory(currentDirectory);
+  while (true) {
+    List<FileSystemEntity> content = rootDirectory.listSync();
+    if (content.contains(
+      Directory(path.join(rootDirectory.path, _entityAtRootLevel)),
+    )) {
+      return rootDirectory.path;
+    }
+    rootDirectory = Directory(path.dirname(rootDirectory.path));
+  }
+}
+
+const String _outputDirectoryName = "out";
+String get outputDirectory {
+  return path.join(rootDirectory, _outputDirectoryName);
+}
+
 final Iterable<String> flags = Platform.executableArguments.where(
   (arg) => arg.startsWith("--"),
 );
@@ -72,4 +107,3 @@ bool ensurePrograms(List<String> requiredPrograms) {
   }
   return isAllFound;
 }
-

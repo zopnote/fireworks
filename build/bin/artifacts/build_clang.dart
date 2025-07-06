@@ -17,39 +17,35 @@
 
 import 'dart:io';
 
-import 'package:fireworks_scripts/environment.dart';
+import 'package:fireworks_scripts/environment.dart' as environment;
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
 
 const String repository = "https://github.com/llvm/llvm-project.git";
 const List<String> requiredPrograms = const ["cmake", "git", "python"];
 
-final String systemName = Platform.version.split("\"")[1];
+
 final String scriptName = path.basenameWithoutExtension(Platform.script.path);
 final String repositoryName = path.basenameWithoutExtension(repository);
 
-final String workDirectoryPath = Platform.isWindows
-    ? path.join(path.dirname(Platform.script.path), scriptName).substring(1)
-    : path.join(path.dirname(Platform.script.path), scriptName);
-
 final String buildFilesDirectoryPath = path.join(
-  workDirectoryPath,
-  "$repositoryName-$systemName-cmake-build",
+  environment.currentDirectory,
+  "$repositoryName-${environment.system}-cmake-build",
 );
 
 final String repositoryDirectoryPath = path.join(
-  workDirectoryPath,
+  environment.currentDirectory,
   repositoryName,
 );
 
 final String outputDirectoryPath = path.join(
-  workDirectoryPath,
-  "$scriptName-$systemName"
+  environment.outputDirectory, "artifacts",
+  "$repositoryName-${environment.system}"
 );
 
 Future<int> main(List<String> args) async {
 
-  if (!ensurePrograms(requiredPrograms)) {
+  if (!environment.ensurePrograms(requiredPrograms)) {
     stderr.writeln(
       "\nPlease ensure the availability of all dependencies to proceed.",
     );
