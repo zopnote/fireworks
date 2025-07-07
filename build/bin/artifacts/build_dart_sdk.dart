@@ -17,7 +17,7 @@
 
 import 'dart:io';
 
-import 'package:fireworks_scripts/environment.dart';
+import 'package:fireworks_scripts/environment.dart' as environment;
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
 
@@ -25,75 +25,85 @@ const String repository =
     "https://chromium.googlesource.com/chromium/tools/depot_tools.git";
 const List<String> requiredPrograms = const ["cmake", "git", "python"];
 
-final String systemName = Platform.version.split("\"")[1];
-final String scriptName = path.basenameWithoutExtension(Platform.script.path);
 final String repositoryName = path.basenameWithoutExtension(repository);
 
-final String workDirectoryPath = Platform.isWindows
-    ? path.join(path.dirname(Platform.script.path), scriptName).substring(1)
-    : path.join(path.dirname(Platform.script.path), scriptName);
+final Directory repositoryDirectory = Directory(
+    path.join(
+        environment.workDirectory,
+        repositoryName
+    ));
 
-final String buildFilesDirectoryPath = path.join(
-  workDirectoryPath,
-  "$repositoryName-$systemName-cmake-build",
-);
+final Directory outputDirectory = Directory(path.join(
+  environment.outputDirectory,
+  "bin",
+  "dart-${environment.system}",
+));
 
-final String repositoryDirectoryPath = path.join(
-  workDirectoryPath,
-  repositoryName,
-);
+final Directory workDirectory = Directory(environment.workDirectory);
 
-final String outputDirectoryPath = path.join(
-  workDirectoryPath,
-  "$scriptName-$systemName",
-);
+final Directory fetchableDartDirectory = Directory(path.join(workDirectory.path, "dart"));
+final Directory dartRepositoryDirectory = Directory(path.join(fetchableDartDirectory.path, "sdk"));
 
-final String dartDirectoryPath = path.join(workDirectoryPath, "dart");
-final String dartSdkDirectoryPath = path.join(dartDirectoryPath, "sdk");
-
-const String windowsAttentionMessage = """
-
+const String windowsAttentionMessage = """\n
 Please ensure you have the Windows 10 SDK installed.
 This can be installed separately or by checking the appropriate box in the Visual Studio Installer.
 The SDK Debugging Tools must also be installed.
 More information on https://github.com/dart-lang/sdk/blob/main/docs/Building.md
 """;
 
+final StepProcess process = StepProcess(
+    workingDirectory: workDirectory.path,
+    steps: [
+      Step("Note for windows",
+        condition: () => Platform.isWindows,
+        run: (_) async {
+          stdout.writeln(windowsAttentionMessage);
+          return true;
+        }
+      ),
+      Step("Check for available Programs",
+        condition: () => !environment.ensurePrograms(requiredPrograms),
+        run: (_) async {
+          stderr.writeln(
+            "\nPlease ensure the availability of all dependencies to proceed.",
+          );
+          return false;
+        }
+      ),
+      Step("Create directory",
+        condition: () => !workDirectory.existsSync(),
+        run: (_) async {
+          await workDirectory.create(recursive: true);
+          return workDirectory.exists();
+        }
+      ),
+      Step("Clone repository",
+        command: CommandProperties(
+            program: "git",
+            arguments: [
+              "clone",
+              repository
+            ]
+        ),
+      ),
+      Step("MacOS error precare",
+        condition: () => Platform.isMacOS,
+        command: CommandProperties(
+            program: "xcode",
+            arguments: [
+              "-select",
+              "-s",
+              "/Applications/Xcode.app/Contents/Developer"
+            ],
+          administrator: true
+        ),
+      ),
+
+    ]
+);
+
 Future<int> main() async {
-  if (Platform.isWindows) {
-    stdout.writeln(windowsAttentionMessage);
-  }
-  if (!ensurePrograms(requiredPrograms)) {
-    stderr.writeln(
-      "\nPlease ensure the availability of all dependencies to proceed.",
-    );
-    return 1;
-  }
 
-  await Directory(workDirectoryPath).create(recursive: true);
-
-  if (!Directory(repositoryDirectoryPath).existsSync()) {
-    await executeProcess(workDirectoryPath, "git", ["clone", repository]);
-  }
-
-  if (Platform.isMacOS) {
-    await executeProcess(workDirectoryPath, "sudo", [
-      "xcode",
-      "-select",
-      "-s",
-      "/Applications/Xcode.app/Contents/Developer",
-    ]);
-  }
-
-  if (Platform.isWindows) {
-    await executeProcess(
-      repositoryDirectoryPath,
-      "gclient",
-      [],
-      runInShell: true,
-      includeParentEnvironment: true,
-    );
-  }
 
   if (!Directory(dartDirectoryPath).existsSync()) {
     await Directory(dartDirectoryPath).create(recursive: true);

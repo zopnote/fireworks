@@ -31,16 +31,25 @@ String get currentDirectory {
   return path.dirname(Platform.script.path);
 }
 
+final String scriptName = path.basenameWithoutExtension(Platform.script.path);
+
 const String _entityAtRootLevel = ".git";
 String get rootDirectory {
   Directory rootDirectory = Directory(currentDirectory);
   while (true) {
-    if (Directory(path.join(rootDirectory.path, _entityAtRootLevel)).existsSync()) {
+    if (Directory(
+      path.join(rootDirectory.path, _entityAtRootLevel),
+    ).existsSync()) {
       return rootDirectory.path;
     }
     rootDirectory = Directory(path.dirname(rootDirectory.path));
   }
 }
+
+final String workDirectory = path.join(
+  outputDirectory,
+  "${scriptName}-${system}",
+);
 
 const String _outputDirectoryName = "out";
 String get outputDirectory {

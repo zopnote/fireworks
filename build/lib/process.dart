@@ -19,7 +19,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' as path;
 
 Future waitWhile(bool test(), [Duration pollInterval = Duration.zero]) {
   var completer = new Completer();
@@ -35,24 +34,9 @@ Future waitWhile(bool test(), [Duration pollInterval = Duration.zero]) {
   return completer.future;
 }
 
-/**
- * Representation of a command that can be executed as part of [StepProcess];
- */
-final class Step {
-  /// Switch between stdio and a spinner. Stderr will be not affected.
-  final bool printStdio;
-
-  /// Override the working directory of the overall [StepProcess];
-  final String? overrideWorkingDirectory;
-
-  /// Program that should be executed.
+final class CommandProperties {
   final String program;
-
-  /// Arguments that will be applied to the program and will result in the command.
   final List<String> arguments;
-
-  /// If a error should be ignored for the rest of the steps list inside of a [StepProcess];
-  final bool proceedOnFail;
 
   /// Custom environment variables that get applied to the commands execution.
   final Map<String, String>? environment;
@@ -70,60 +54,98 @@ final class Step {
   /// on linux and macOS a sudo will be added.
   final bool administrator;
 
-  final Future<bool> Function(String workingDirectory, Map<String, String> environment, String message)? run;
-  const Step({
-    this.overrideWorkingDirectory,
+  /// If the process should get a spinner.
+  /// Notice that any input to stdout or stderr will move the spinner to the last line.
+  /// Therefore stop the spinner before any result information have to printed
+  /// or another step will be executed.
+  final bool spinner;
+
+  const CommandProperties({
     required this.program,
     required this.arguments,
-    this.proceedOnFail = true,
     this.environment,
     this.includeParentEnvironment = true,
     this.mode = ProcessStartMode.normal,
     this.shell = false,
     this.administrator = false,
-    this.printStdio = true,
-    this.run
+    this.spinner = false,
   });
+
+  String get string {
+    return "${program} ${arguments.join(" ")}";
+  }
+}
+
+/**
+ * Representation of a command that can be executed as part of [StepProcess];
+ */
+final class Step {
+  final String name;
+
+  /// Function that will run.
+  final Future<bool> Function(String workingDirectory)? run;
+
+  final CommandProperties? command;
+
+  /// If a false value received by run() or the command should terminate the [StepProcess]
+  final bool exitFail;
+
+  final bool Function()? condition;
+
+  const Step(this.name, {this.command, this.run, this.exitFail = true, this.condition});
 
   Future<bool> execute({
     required String workingDirectory,
     Map<String, String> environment = const {},
     String message = "",
   }) async {
-    if (overrideWorkingDirectory != null) {
-      workingDirectory = overrideWorkingDirectory!;
+    if (condition != null) {
+      if (!condition!()) {
+        return true;
+      }
     }
-
-    if (this.environment != null) {
-      environment.addAll(this.environment!);
+    if (message[message.length - 1] != " " && message.isNotEmpty) {
+      message += " ";
     }
-
+    ProcessSpinner? spinner;
     if (run != null) {
-      return run!(workingDirectory, environment, message);
+      spinner = ProcessSpinner()..start(message + name);
+      return run!(workingDirectory);
     }
 
-    final String program = administrator
+    if (this.command == null) {
+      throw Exception(
+        "You have to decide between a function call that should "
+        "be run as the steps purpose or the combination of an argument array "
+        "and the program the arguments will be applied to."
+        "But you didn't specified a function or the program, argument couple.",
+      );
+    }
+
+    if (this.command!.spinner) {
+      spinner = ProcessSpinner()..start(message + this.command!.string);
+    }
+    if (this.command!.environment != null) {
+      environment.addAll(this.command!.environment!);
+    }
+
+    final String program = this.command!.administrator
         ? Platform.isWindows
               ? "powershell.exe"
-              : "sudo ${this.program}"
-        : this.program;
+              : "sudo ${this.command!.program}"
+        : this.command!.program;
 
     final List<String> arguments;
-    if (administrator && Platform.isWindows) {
+    if (this.command!.administrator && Platform.isWindows) {
       arguments = [
         "-Command",
         """
         Set-Location -Path $workingDirectory;
-        Start-Process -FilePath ${this.program} ${this.arguments.join(" ")} -Verb RunAs 
+        Start-Process -FilePath ${this.command!.string} -Verb RunAs 
         """,
       ];
     } else {
-      arguments = this.arguments;
-    }
-
-    ProcessSpinner? spinner;
-    if (!printStdio) {
-      spinner = ProcessSpinner()..start();
+      arguments = this.command!.arguments;
     }
 
     final result = await Process.start(
@@ -131,12 +153,13 @@ final class Step {
       arguments,
       workingDirectory: workingDirectory,
       environment: environment,
-      includeParentEnvironment: includeParentEnvironment,
-      mode: mode,
-      runInShell: shell,
+      includeParentEnvironment: this.command!.includeParentEnvironment,
+      mode: this.command!.mode,
+      runInShell: this.command!.shell,
     );
 
-    if (mode != ProcessStartMode.detached && printStdio) {
+    if (this.command!.mode != ProcessStartMode.detached &&
+        !this.command!.spinner) {
       void Function(String) writeln = (data) {
         stdout.writeln(data.trim().split('\n').last);
       };
@@ -156,14 +179,15 @@ final class StepProcess {
   final String workingDirectory;
   final Map<String, String> environment;
   final List<Step> steps;
-  StepProcess({
+  const StepProcess({
     required this.workingDirectory,
     required this.steps,
     this.environment = const {},
   });
   Future<bool> execute() async {
+    bool result;
     for (int i = 0; i < steps.length - 1; i++) {
-      bool result = await steps[i].execute(
+      result = await steps[i].execute(
         workingDirectory: workingDirectory,
         environment: environment,
         message: "[${i + 1}/${steps.length}] ",
@@ -197,7 +221,7 @@ class ProcessSpinner {
     _counter = 0;
     _timer?.cancel();
     _timer = Timer.periodic(Duration(milliseconds: 80), (timer) {
-      stdout.write('\r${_frames[_counter % _frames.length]} $message');
+      stdout.write('\r$message ${_frames[_counter % _frames.length]}');
       _counter++;
     });
   }
