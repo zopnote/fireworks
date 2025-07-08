@@ -41,24 +41,62 @@ enum BuildType {
 }
 
 enum SystemName {
-  windows(["windows", "Windows"]),
-  android(["android", "Android"]),
-  linux(["linux", "ubuntu", "arch", "Linux", "steamos", "SteamOS"]),
-  ios(["ios", "iOS", "phoneOS", "PhoneOS"]),
-  macos(["macos", "darwin", "MacOS", "macOS"]);
+  windows({
+    "normal": "windows",
+    "cmake": "Windows"
+  }),
+  android({
+    "normal": "android",
+    "cmake": "Android"
+  }),
+  linux({
+    "normal": "linux",
+    "cmake": "Linux"
+  }),
+  ios({
+    "normal": "ios",
+    "cmake": "iOS"
+  }),
+  macos({
+    "normal": "macos",
+    "cmake": "Darwin"
+  });
 
-  const SystemName(this.names);
-  final List<String> names;
+  const SystemName(this.name);
+  final Map<String, String> name;
 }
 
 enum SystemProcessor {
-  x86_64(["x86_64", "x64", "X64", "AMD64", "amd64"]),
-  arm64(["arm64", "ARM64", "Arm64", "arm64-v8a"]),
-  x86(["x86", "IA32", "ia32", "i386", "x32"]),
-  arm(["arm", "armeabi-v7a", "arm32"]);
+  x86_64("x86_64", {
+    "cmake_win": "AMD64",
+    "cmake_linux": "x86_64",
+    "cmake_macos": "x86_64",
+    "android_abi": "x86_64",
+    "dart": "x64"
+  }),
+  arm64("arm64", {
+    "cmake_win": "ARM64",
+    "cmake_linux": "aarch64",
+    "cmake_macos": "arm64",
+    "android_abi": "arm64-v8a"
+  }),
+  x86("x86", {
+    "cmake_win": "X86",
+    "cmake_linux": "i386",
+    "android_abi": "x86"
+  }),
+  arm("arm", {
+    "cmake_win": "ARM",
+    "cmake_linux": "arm",
+    "android_abi": "armeabi-v7a"
+  }),
+  riscv({
 
-  const SystemProcessor(this.names);
-  final List<String> names;
+  });
+
+  const SystemProcessor(this.name, this.alias);
+  final String name;
+  final Map<String, String> alias;
 }
 
 /// Representing processor architecture, operating system couple.
@@ -83,19 +121,10 @@ final class System {
 }
 
 final class BuildEnvironment {
-  BuildEnvironment._internal(
-    this.vars,
-    this.target,
-    this.buildType,
-    this.workDirectory,
-    this.scriptDirectory,
-    this.rootDirectory,
-    this.outputDirectory,
-  );
   BuildEnvironment({
     final System? target,
     this.buildType = BuildType.debug,
-    Map<String, dynamic> Function(BuildEnvironment env)? vars,
+    final Map<String, dynamic>? vars,
     final Directory? workDirectory,
     final Directory? scriptDirectory,
     final Directory? rootDirectory,
@@ -136,17 +165,7 @@ final class BuildEnvironment {
     this.target = target ?? System.current();
 
     if (vars != null) {
-      this.vars = vars(
-        BuildEnvironment._internal(
-          {},
-          this.target,
-          this.buildType,
-          this.workDirectory,
-          this.scriptDirectory,
-          this.rootDirectory,
-          this.outputDirectory,
-        ),
-      );
+      this.vars = vars;
     } else {
       this.vars = {};
     }
@@ -163,6 +182,28 @@ final class BuildEnvironment {
       _outputDirectoryKey: this.outputDirectory,
     });
   }
+
+  factory BuildEnvironment.fromDefault(
+    BuildEnvironment builder(BuildEnvironment defaultEnvironment),
+  ) => builder(BuildEnvironment());
+
+  BuildEnvironment override({
+    final System? target,
+    final BuildType? buildType,
+    final Map<String, dynamic>? vars,
+    final Directory? workDirectory,
+    final Directory? scriptDirectory,
+    final Directory? rootDirectory,
+    final Directory? outputDirectory,
+  }) => BuildEnvironment(
+      target: target ?? this.target,
+      buildType: buildType ?? this.buildType,
+      vars: vars ?? this.vars,
+      workDirectory: workDirectory ?? this.workDirectory,
+      outputDirectory: outputDirectory ?? this.outputDirectory,
+      rootDirectory: rootDirectory ?? this.rootDirectory,
+      scriptDirectory: scriptDirectory ?? this.scriptDirectory
+  );
 
   final BuildType buildType;
 
@@ -189,42 +230,14 @@ final class BuildEnvironment {
 
   late final Directory outputDirectory;
 
-  BuildEnvironment override({
-    System target(BuildEnvironment old)?,
-    BuildType buildType(BuildEnvironment old)?,
-    Map<String, dynamic> vars(BuildEnvironment old)?,
-    Directory workDirectory(BuildEnvironment old)?,
-    Directory scriptDirectory(BuildEnvironment old)?,
-    Directory rootDirectory(BuildEnvironment old)?,
-    Directory outputDirectory(BuildEnvironment old)?,
-  }) {
-    T? decide<T>(T Function(BuildEnvironment)? a, T? b) {
-      return a != null ? a(this) : b;
-    }
-
-    return BuildEnvironment(
-      target: decide(target, null),
-      buildType: decide(buildType, BuildType.debug)!,
-      vars: (_) => decide(vars, {})!,
-      workDirectory: decide(workDirectory, null),
-      outputDirectory: decide(outputDirectory, null),
-      rootDirectory: decide(rootDirectory, null),
-      scriptDirectory: decide(scriptDirectory, null),
-    );
-  }
-
   Map<String, String> toJson() {
     final Map<String, String> jsonMap = {};
     vars.forEach((key, value) {
       if (value is String) {
         jsonMap[key] = value;
-      } else if (value is num) {
+      } else if (value is num || value is List<String>) {
         jsonMap[key] = value.toString();
-      } else if (value is List<String>) {
-        jsonMap[key] = value.toString();
-      } else if (value is SystemName) {
-        jsonMap[key] = value.name;
-      } else if (value is SystemProcessor) {
+      } else if (value is SystemName || value is SystemProcessor) {
         jsonMap[key] = value.name;
       } else if (value is Directory) {
         jsonMap[key] = value.path;
@@ -233,11 +246,12 @@ final class BuildEnvironment {
     return jsonMap;
   }
 
-  final String executableExtension = Platform.isWindows ? ".exe" : "";
-  final List<String> pathVariableEntries =
-      Platform.environment["PATH"]?.split(Platform.isWindows ? ";" : ":") ?? [];
+  static bool ensurePrograms(List<String> requiredPrograms) {
+    final String executableExtension = Platform.isWindows ? ".exe" : "";
+    final List<String> pathVariableEntries =
+        Platform.environment["PATH"]?.split(Platform.isWindows ? ";" : ":") ??
+        [];
 
-  bool ensurePrograms(List<String> requiredPrograms) {
     if (requiredPrograms.isEmpty) return true;
 
     bool isAllFound = true;

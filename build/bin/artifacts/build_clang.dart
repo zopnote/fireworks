@@ -22,29 +22,39 @@ import 'package:fireworks_scripts/environment.dart';
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
 
-final BuildEnvironment environment = BuildEnvironment(
-  buildType: BuildType.release,
-  vars: (env) {
-    const String repositoryUrl = "https://github.com/llvm/llvm-project.git";
-    final String repositoryPath = path.join(
-      path.basenameWithoutExtension(repositoryUrl),
-    );
-    final String installDestination = path.join(
-      env.outputDirectory.path, "bin", "clang-${env.target.string()}"
-    );
-    return {
+final BuildEnvironment environment = BuildEnvironment.fromDefault((
+  defaultEnvironment,
+) {
+  const String repositoryUrl = "https://github.com/llvm/llvm-project.git";
+  final String repositoryPath = path.join(
+    path.basenameWithoutExtension(repositoryUrl),
+  );
+  return BuildEnvironment(
+    target: System(
+        name: SystemName.windows,
+        processor: SystemProcessor.x86_64
+    ),
+    buildType: BuildType.release,
+    outputDirectory: Directory(
+      path.join(
+        defaultEnvironment.outputDirectory.path,
+        "bin",
+        "clang-${defaultEnvironment.target.string()}",
+      ),
+    ),
+    vars: {
       "repository_url": repositoryUrl,
       "repository_path": repositoryPath,
-      "install_path": installDestination,
       "required_programs": ["git", "cmake", "python"],
-    };
-  },
-);
+    },
+  );
+});
 
 final List<BuildStep> steps = [
   BuildStep(
     "Check for available programs",
-    condition: (env) => !env.ensurePrograms(env.vars["required_programs"]!),
+    condition: (env) =>
+        !BuildEnvironment.ensurePrograms(env.vars["required_programs"]!),
     run: (env) async {
       stderr.writeln(
         "\nPlease ensure the availability of all dependencies to proceed.",
@@ -62,8 +72,7 @@ final List<BuildStep> steps = [
   ),
   BuildStep(
     "Clone repository",
-    condition: (env) =>
-        !Directory(env.vars["repository_path"]!).existsSync(),
+    condition: (env) => !Directory(env.vars["repository_path"]!).existsSync(),
     command: (env) => CommandProperties(
       program: "git",
       arguments: [
@@ -86,9 +95,9 @@ final List<BuildStep> steps = [
       arguments: [
         "-S ${env.vars["repository_path"]!}/llvm",
         "-B ${env.workDirectory.path}",
-        "-DCMAKE_INSTALL_PREFIX=${env.vars["install_path"]!}",
+        "-DCMAKE_INSTALL_PREFIX=${env.outputDirectory.path}",
 
-        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_BUILD_TYPE=${env.buildType.name["cmake"]}",
         "-DLLVM_ENABLE_PDB=OFF",
         "-DLLVM_BUILD_TOOLS=OFF",
         "-DLLVM_ENABLE_DIA_SDK=OFF",
@@ -132,7 +141,9 @@ final List<BuildStep> steps = [
         "\nArtifact output can be found in '${env.vars["install_path"]}'",
       );
       String out = jsonEncode(env.toJson());
-      final File outputInfo = File(path.join(env.workDirectory.path, "env.json"))..writeAsStringSync(out);
+      final File outputInfo = File(
+        path.join(env.workDirectory.path, "env.json"),
+      )..writeAsStringSync(out);
       return true;
     },
   ),
