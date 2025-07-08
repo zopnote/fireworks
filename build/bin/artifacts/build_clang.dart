@@ -15,113 +15,128 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:fireworks_scripts/environment.dart' as environment;
+import 'package:fireworks_scripts/environment.dart';
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
 
-const String repository = "https://github.com/llvm/llvm-project.git";
-const List<String> requiredPrograms = const ["cmake", "git", "python"];
-
-final String repositoryName = path.basenameWithoutExtension(repository);
-
-final Directory workDirectory = Directory(environment.workDirectory);
-
-final Directory repositoryDirectory = Directory(path.join(workDirectory.path, repositoryName));
-
-final Directory outputDirectory = Directory(path.join(
-  environment.outputDirectory,
-  "bin",
-  "clang-${environment.system}",
-));
-
-final StepProcess process = StepProcess(
-  workingDirectory: workDirectory.path,
-  steps: [
-    Step(
-      "Check for available programs",
-      condition: () => !environment.ensurePrograms(requiredPrograms),
-      run: (_) async {
-        stderr.writeln(
-          "\nPlease ensure the availability of all dependencies to proceed.",
-        );
-        return false;
-      },
-    ),
-    Step(
-      "Create directory",
-      condition: () => !workDirectory.existsSync(),
-      run: (_) async {
-        await workDirectory.create(recursive: true);
-        return workDirectory.exists();
-      },
-    ),
-    Step(
-      "Clone repository",
-      condition: () => !repositoryDirectory.existsSync(),
-      command: CommandProperties(
-        program: "git",
-        arguments: [
-          "clone",
-          "-b release/20.x",
-          "--single-branch",
-          "--depth 1",
-          repository,
-        ],
-      ),
-    ),
-    Step(
-      "CMake configuration",
-      condition: () => !Directory("${workDirectory.path}/CMakeFiles").existsSync(),
-      command: CommandProperties(
-        program: "cmake",
-        arguments: [
-          "-S ${repositoryDirectory.path}/llvm",
-          "-B ${workDirectory.path}",
-          "-DCMAKE_INSTALL_PREFIX=${outputDirectory.path}",
-
-          "-DCMAKE_BUILD_TYPE=Release",
-          "-DLLVM_ENABLE_PDB=OFF",
-          "-DLLVM_BUILD_TOOLS=OFF",
-          "-DLLVM_ENABLE_DIA_SDK=OFF",
-          "-DLLVM_ENABLE_PDB=OFF",
-          "-DLLVM_ENABLE_PROJECTS=clang",
-          "-DLLVM_TARGETS_TO_BUILD=X86;AArch64",
-        ],
-      ),
-    ),
-    Step(
-      "Build project files",
-      command: CommandProperties(
-        program: "cmake",
-        arguments: ["--build ${workDirectory.path}", "--config Release"],
-      ),
-    ),
-    Step(
-      "Create directory",
-      run: (_) async {
-        Directory directory = await Directory(
-          "$outputDirectory",
-        ).create(recursive: true);
-        return directory.exists();
-      },
-    ),
-    Step(
-      "Install project binaries",
-      command: CommandProperties(
-        program: "cmake",
-        arguments: ["--install ${workDirectory.path}"],
-      ),
-    ),
-    Step(
-      "Checkout",
-      run: (_) async {
-        stdout.writeln("\nArtifact output can be found in '${outputDirectory.path}'");
-        return true;
-      },
-    ),
-  ],
+final BuildEnvironment environment = BuildEnvironment(
+  buildType: BuildType.release,
+  vars: (env) {
+    const String repositoryUrl = "https://github.com/llvm/llvm-project.git";
+    final String repositoryPath = path.join(
+      path.basenameWithoutExtension(repositoryUrl),
+    );
+    final String installDestination = path.join(
+      env.outputDirectory.path, "bin", "clang-${env.target.string()}"
+    );
+    return {
+      "repository_url": repositoryUrl,
+      "repository_path": repositoryPath,
+      "install_path": installDestination,
+      "required_programs": ["git", "cmake", "python"],
+    };
+  },
 );
 
-Future<int> main(List<String> args) async => await process.execute() ? 0 : 1;
+final List<BuildStep> steps = [
+  BuildStep(
+    "Check for available programs",
+    condition: (env) => !env.ensurePrograms(env.vars["required_programs"]!),
+    run: (env) async {
+      stderr.writeln(
+        "\nPlease ensure the availability of all dependencies to proceed.",
+      );
+      return false;
+    },
+  ),
+  BuildStep(
+    "Create work directory",
+    condition: (env) => !env.workDirectory.existsSync(),
+    run: (env) async {
+      await env.workDirectory.create(recursive: true);
+      return await env.workDirectory.exists();
+    },
+  ),
+  BuildStep(
+    "Clone repository",
+    condition: (env) =>
+        !Directory(env.vars["repository_path"]!).existsSync(),
+    command: (env) => CommandProperties(
+      program: "git",
+      arguments: [
+        "clone",
+        "-b",
+        "release/20.x",
+        "--single-branch",
+        "--depth",
+        "1",
+        env.vars["repository_url"]!,
+      ],
+    ),
+  ),
+  BuildStep(
+    "CMake configuration",
+    condition: (env) =>
+        !Directory("${env.workDirectory.path}/CMakeFiles").existsSync(),
+    command: (env) => CommandProperties(
+      program: "cmake",
+      arguments: [
+        "-S ${env.vars["repository_path"]!}/llvm",
+        "-B ${env.workDirectory.path}",
+        "-DCMAKE_INSTALL_PREFIX=${env.vars["install_path"]!}",
+
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_ENABLE_PDB=OFF",
+        "-DLLVM_BUILD_TOOLS=OFF",
+        "-DLLVM_ENABLE_DIA_SDK=OFF",
+        "-DLLVM_ENABLE_PDB=OFF",
+        "-DLLVM_ENABLE_PROJECTS=clang",
+        "-DLLVM_TARGETS_TO_BUILD=X86;AArch64",
+      ],
+    ),
+  ),
+  BuildStep(
+    "Build project files",
+    command: (env) => CommandProperties(
+      program: "cmake",
+      arguments: [
+        "--build",
+        env.workDirectory.path,
+        "--config",
+        env.buildType.name["cmake"]!,
+      ],
+    ),
+  ),
+  BuildStep(
+    "Create directory",
+    condition: (env) => Directory(env.vars["install_path"]).existsSync(),
+    run: (env) async {
+      await Directory(env.vars["install_path"]).create(recursive: true);
+      return await Directory(env.vars["install_path"]).exists();
+    },
+  ),
+  BuildStep(
+    "Install project binaries",
+    command: (env) => CommandProperties(
+      program: "cmake",
+      arguments: ["--install", env.workDirectory.path],
+    ),
+  ),
+  BuildStep(
+    "Checkout",
+    run: (env) async {
+      stdout.writeln(
+        "\nArtifact output can be found in '${env.vars["install_path"]}'",
+      );
+      String out = jsonEncode(env.toJson());
+      final File outputInfo = File(path.join(env.workDirectory.path, "env.json"))..writeAsStringSync(out);
+      return true;
+    },
+  ),
+];
+
+Future<int> main(List<String> args) async =>
+    await environment.execute(steps) ? 0 : 1;

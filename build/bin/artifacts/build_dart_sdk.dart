@@ -51,17 +51,17 @@ The SDK Debugging Tools must also be installed.
 More information on https://github.com/dart-lang/sdk/blob/main/docs/Building.md
 """;
 
-final StepProcess process = StepProcess(
+final BuildProcess process = BuildProcess(
     workingDirectory: workDirectory.path,
     steps: [
-      Step("Note for windows",
+      BuildStep("Note for windows",
         condition: () => Platform.isWindows,
         run: (_) async {
           stdout.writeln(windowsAttentionMessage);
           return true;
         }
       ),
-      Step("Check for available Programs",
+      BuildStep("Check for available Programs",
         condition: () => !environment.ensurePrograms(requiredPrograms),
         run: (_) async {
           stderr.writeln(
@@ -70,14 +70,14 @@ final StepProcess process = StepProcess(
           return false;
         }
       ),
-      Step("Create directory",
+      BuildStep("Create directory",
         condition: () => !workDirectory.existsSync(),
         run: (_) async {
           await workDirectory.create(recursive: true);
           return workDirectory.exists();
         }
       ),
-      Step("Clone repository",
+      BuildStep("Clone repository",
         command: CommandProperties(
             program: "git",
             arguments: [
@@ -86,7 +86,7 @@ final StepProcess process = StepProcess(
             ]
         ),
       ),
-      Step("MacOS error precare",
+      BuildStep("MacOS error precare",
         condition: () => Platform.isMacOS,
         command: CommandProperties(
             program: "xcode",
@@ -101,23 +101,3 @@ final StepProcess process = StepProcess(
 
     ]
 );
-
-Future<int> main() async {
-
-
-  if (!Directory(dartDirectoryPath).existsSync()) {
-    await Directory(dartDirectoryPath).create(recursive: true);
-  }
-
-  if (!await Directory(path.join(dartDirectoryPath, "sdk")).existsSync()) {
-    await executeProcess(
-      dartDirectoryPath,
-      path.join(repositoryDirectoryPath, "fetch.bat"),
-      ["dart"],
-      exitOnFail: true,
-      winAsAdministrator: true
-    );
-  }
-
-  return 0;
-}
