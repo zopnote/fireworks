@@ -32,91 +32,47 @@ const String _projectRootDirectoryKey = "root_directory";
 const String _outputDirectoryKey = "output_directory";
 
 enum BuildType {
-  debug({"normal": "debug", "cmake": "Debug"}),
-  releaseDebug({"normal": "rel_debug", "cmake": "RelWithDebInfo"}),
-  release({"normal": "release", "cmake": "Release"});
-
-  const BuildType(this.name);
-  final Map<String, String> name;
+  debug,
+  releaseDebug,
+  release
 }
 
-enum SystemName {
-  windows({
-    "normal": "windows",
-    "cmake": "Windows"
-  }),
-  android({
-    "normal": "android",
-    "cmake": "Android"
-  }),
-  linux({
-    "normal": "linux",
-    "cmake": "Linux"
-  }),
-  ios({
-    "normal": "ios",
-    "cmake": "iOS"
-  }),
-  macos({
-    "normal": "macos",
-    "cmake": "Darwin"
-  });
-
-  const SystemName(this.name);
-  final Map<String, String> name;
+enum SystemPlatform {
+  windows,
+  android,
+  linux,
+  ios,
+  macos
 }
-
 enum SystemProcessor {
-  x86_64("x86_64", {
-    "cmake_win": "AMD64",
-    "cmake_linux": "x86_64",
-    "cmake_macos": "x86_64",
-    "android_abi": "x86_64",
-    "dart": "x64"
-  }),
-  arm64("arm64", {
-    "cmake_win": "ARM64",
-    "cmake_linux": "aarch64",
-    "cmake_macos": "arm64",
-    "android_abi": "arm64-v8a"
-  }),
-  x86("x86", {
-    "cmake_win": "X86",
-    "cmake_linux": "i386",
-    "android_abi": "x86"
-  }),
-  arm("arm", {
-    "cmake_win": "ARM",
-    "cmake_linux": "arm",
-    "android_abi": "armeabi-v7a"
-  }),
-  riscv({
-
-  });
-
-  const SystemProcessor(this.name, this.alias);
-  final String name;
-  final Map<String, String> alias;
+  x86_64,
+  x86,
+  arm64,
+  arm,
+  riscv64
 }
 
 /// Representing processor architecture, operating system couple.
 final class System {
-  final SystemName name;
+  final SystemPlatform platform;
   final SystemProcessor processor;
-  System({required this.name, required this.processor});
+  System({required this.platform, required this.processor});
   factory System.current() {
     final String system = Platform.version.split("\"")[1];
     return System(
-      name: SystemName.values.firstWhere(
-        (i) => i.names.contains(system.split("_").first),
+      platform: SystemPlatform.values.firstWhere(
+        (i) => i.name == system.split("_").first,
       ),
-      processor: SystemProcessor.values.firstWhere(
-        (i) => i.names.contains(system.split("_").last),
-      ),
+      processor: {
+        "x64": SystemProcessor.x86_64,
+        "arm64": SystemProcessor.arm64,
+        "arm": SystemProcessor.arm,
+        "riscv64": SystemProcessor.riscv64
+      }[system.split("_").last]!
     );
   }
   String string() {
-    return "${name.names.first}_${processor.names.first}";
+    return "${platform.name}_${processor.name}";
   }
 }
 
@@ -171,10 +127,10 @@ final class BuildEnvironment {
     }
     this.vars.addAll({
       _hostSystemKey: host.string(),
-      _hostSystemNameKey: host.name,
+      _hostSystemNameKey: host.platform,
       _hostSystemProcessorKey: host.processor,
       _targetSystemKey: this.target.string(),
-      _targetSystemNameKey: this.target.name,
+      _targetSystemNameKey: this.target.platform,
       _targetSystemProcessorKey: this.target.processor,
       _workDirectoryKey: this.workDirectory,
       _scriptDirectoryKey: this.scriptDirectory,
@@ -196,13 +152,13 @@ final class BuildEnvironment {
     final Directory? rootDirectory,
     final Directory? outputDirectory,
   }) => BuildEnvironment(
-      target: target ?? this.target,
-      buildType: buildType ?? this.buildType,
-      vars: vars ?? this.vars,
-      workDirectory: workDirectory ?? this.workDirectory,
-      outputDirectory: outputDirectory ?? this.outputDirectory,
-      rootDirectory: rootDirectory ?? this.rootDirectory,
-      scriptDirectory: scriptDirectory ?? this.scriptDirectory
+    target: target ?? this.target,
+    buildType: buildType ?? this.buildType,
+    vars: vars ?? this.vars,
+    workDirectory: workDirectory ?? this.workDirectory,
+    outputDirectory: outputDirectory ?? this.outputDirectory,
+    rootDirectory: rootDirectory ?? this.rootDirectory,
+    scriptDirectory: scriptDirectory ?? this.scriptDirectory,
   );
 
   final BuildType buildType;
@@ -237,8 +193,8 @@ final class BuildEnvironment {
         jsonMap[key] = value;
       } else if (value is num || value is List<String>) {
         jsonMap[key] = value.toString();
-      } else if (value is SystemName || value is SystemProcessor) {
-        jsonMap[key] = value.name;
+      } else if (value is SystemPlatform || value is SystemProcessor) {
+        jsonMap[key] = value.platform;
       } else if (value is Directory) {
         jsonMap[key] = value.path;
       }

@@ -31,8 +31,8 @@ final BuildEnvironment environment = BuildEnvironment.fromDefault((
   );
   return BuildEnvironment(
     target: System(
-        name: SystemName.windows,
-        processor: SystemProcessor.x86_64
+      platform: SystemPlatform.windows,
+      processor: SystemProcessor.x86_64,
     ),
     buildType: BuildType.release,
     outputDirectory: Directory(
@@ -96,14 +96,25 @@ final List<BuildStep> steps = [
         "-S ${env.vars["repository_path"]!}/llvm",
         "-B ${env.workDirectory.path}",
         "-DCMAKE_INSTALL_PREFIX=${env.outputDirectory.path}",
-
-        "-DCMAKE_BUILD_TYPE=${env.buildType.name["cmake"]}",
+        "-DCMAKE_BUILD_TYPE=" +
+            {
+              BuildType.debug: "Debug",
+              BuildType.release: "Release",
+              BuildType.releaseDebug: "RelWithDebInfo",
+            }[env.buildType]!,
         "-DLLVM_ENABLE_PDB=OFF",
         "-DLLVM_BUILD_TOOLS=OFF",
         "-DLLVM_ENABLE_DIA_SDK=OFF",
         "-DLLVM_ENABLE_PDB=OFF",
         "-DLLVM_ENABLE_PROJECTS=clang",
-        "-DLLVM_TARGETS_TO_BUILD=X86;AArch64",
+        "-DLLVM_TARGETS_TO_BUILD=" + {
+          (SystemPlatform.windows, SystemProcessor.x86_64) : [
+            "AArch64", "X86"
+          ],
+          (SystemPlatform.windows, SystemProcessor.arm64) : [
+            "AA"
+          ]
+        }[(env.host.platform, env.host.processor)]!.join(";"),
       ],
     ),
   ),
