@@ -21,40 +21,36 @@ import 'dart:io';
 import 'package:fireworks_scripts/environment.dart';
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
-
-final BuildEnvironment environment = BuildEnvironment.fromDefault((
-  defaultEnvironment,
-) {
+void main() async => await BuildConfig(
+  variables: {
+    "environment_name": "clang_sdk_ci_build",
+    "version": 1.0
+  }
+).override((config) {
   const String repositoryUrl = "https://github.com/llvm/llvm-project.git";
   final String repositoryPath = path.join(
     path.basenameWithoutExtension(repositoryUrl),
   );
-  return BuildEnvironment(
-    target: System(
-      platform: SystemPlatform.windows,
-      processor: SystemProcessor.x86_64,
-    ),
-    buildType: BuildType.release,
+  return BuildConfig(
     outputDirectory: Directory(
       path.join(
-        defaultEnvironment.outputDirectory.path,
+        config.outputDirectory.path,
+        config.target.string(),
         "bin",
-        "clang-${defaultEnvironment.target.string()}",
+        "clang",
       ),
     ),
-    vars: {
+    variables: {
       "repository_url": repositoryUrl,
       "repository_path": repositoryPath,
       "required_programs": ["git", "cmake", "python"],
     },
   );
-});
-
-final List<BuildStep> steps = [
+}).execute([
   BuildStep(
     "Check for available programs",
     condition: (env) =>
-        !BuildEnvironment.ensurePrograms(env.vars["required_programs"]!),
+    !BuildConfig.ensurePrograms(env.vars["required_programs"]!),
     run: (env) async {
       stderr.writeln(
         "\nPlease ensure the availability of all dependencies to proceed.",
@@ -89,10 +85,11 @@ final List<BuildStep> steps = [
   BuildStep(
     "CMake configuration",
     condition: (env) =>
-        !Directory("${env.workDirectory.path}/CMakeFiles").existsSync(),
+    !Directory("${env.workDirectory.path}/CMakeFiles").existsSync(),
     command: (env) => CommandProperties(
       program: "cmake",
-      arguments: [
+      arguments:
+      [
         "-S ${env.vars["repository_path"]!}/llvm",
         "-B ${env.workDirectory.path}",
         "-DCMAKE_INSTALL_PREFIX=${env.outputDirectory.path}",
@@ -102,20 +99,22 @@ final List<BuildStep> steps = [
               BuildType.release: "Release",
               BuildType.releaseDebug: "RelWithDebInfo",
             }[env.buildType]!,
-        "-DLLVM_ENABLE_PDB=OFF",
         "-DLLVM_BUILD_TOOLS=OFF",
-        "-DLLVM_ENABLE_DIA_SDK=OFF",
-        "-DLLVM_ENABLE_PDB=OFF",
+        "-DLLVM_INCLUDE_BENCHMARKS=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_ENABLE_PEDANTIC=ON",
+        "-DLLVM_ENABLE_BINDINGS=OFF",
+        "-DLLVM_BUILD_TESTS=OFF",
+        "-DLLVM_ENABLE_FFI=OFF",
+        "-DLLVM_ENABLE_IDE=OFF",
+        "-DLLVM_ENABLE_LIBCXX=OFF",
+        "-DLLVM_ENABLE_UNWIND_TABLES=OFF",
         "-DLLVM_ENABLE_PROJECTS=clang",
-        "-DLLVM_TARGETS_TO_BUILD=" + {
-          (SystemPlatform.windows, SystemProcessor.x86_64) : [
-            "AArch64", "X86"
-          ],
-          (SystemPlatform.windows, SystemProcessor.arm64) : [
-            "AA"
-          ]
-        }[(env.host.platform, env.host.processor)]!.join(";"),
-      ],
+        "-DLLVM_TARGETS_TO_BUILD=" + ["AArch64", "X86"].join(";"),
+      ] +
+          (env.host.platform == SystemPlatform.windows
+              ? ["-DLLVM_ENABLE_PDB=OFF", "-DLLVM_ENABLE_DIA_SDK=OFF"]
+              : []),
     ),
   ),
   BuildStep(
@@ -126,7 +125,11 @@ final List<BuildStep> steps = [
         "--build",
         env.workDirectory.path,
         "--config",
-        env.buildType.name["cmake"]!,
+        {
+          BuildType.debug: "Debug",
+          BuildType.release: "MinSizeRel",
+          BuildType.releaseDebug: "RelWithDebInfo",
+        }[env.buildType]!,
       ],
     ),
   ),
@@ -142,7 +145,12 @@ final List<BuildStep> steps = [
     "Install project binaries",
     command: (env) => CommandProperties(
       program: "cmake",
-      arguments: ["--install", env.workDirectory.path],
+      arguments: ["--install", env.workDirectory.path, "--config",
+        {
+          BuildType.debug: "Debug",
+          BuildType.release: "MinSizeRel",
+          BuildType.releaseDebug: "RelWithDebInfo",
+        }[env.buildType]!],
     ),
   ),
   BuildStep(
@@ -152,13 +160,10 @@ final List<BuildStep> steps = [
         "\nArtifact output can be found in '${env.vars["install_path"]}'",
       );
       String out = jsonEncode(env.toJson());
-      final File outputInfo = File(
-        path.join(env.workDirectory.path, "env.json"),
-      )..writeAsStringSync(out);
+      File(path.join(env.workDirectory.path, "env.json"))
+        ..writeAsStringSync(out);
       return true;
     },
-  ),
-];
+  )
+]);
 
-Future<int> main(List<String> args) async =>
-    await environment.execute(steps) ? 0 : 1;

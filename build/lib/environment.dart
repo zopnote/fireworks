@@ -76,11 +76,13 @@ final class System {
   }
 }
 
-final class BuildEnvironment {
-  BuildEnvironment({
+typedef BuildConfigCallback = BuildConfig Function(BuildConfig config);
+
+final class BuildConfig {
+  BuildConfig({
     final System? target,
     this.buildType = BuildType.debug,
-    final Map<String, dynamic>? vars,
+    final Map<String, dynamic>? variables,
     final Directory? workDirectory,
     final Directory? scriptDirectory,
     final Directory? rootDirectory,
@@ -120,8 +122,8 @@ final class BuildEnvironment {
     this.outputDirectory = outputDirectory ?? defaultOutputDirectory;
     this.target = target ?? System.current();
 
-    if (vars != null) {
-      this.vars = vars;
+    if (variables != null) {
+      this.vars = variables;
     } else {
       this.vars = {};
     }
@@ -139,11 +141,11 @@ final class BuildEnvironment {
     });
   }
 
-  factory BuildEnvironment.fromDefault(
-    BuildEnvironment builder(BuildEnvironment defaultEnvironment),
-  ) => builder(BuildEnvironment());
+  BuildConfig override(
+    final BuildConfigCallback callback,
+  ) => callback(this);
 
-  BuildEnvironment override({
+  BuildConfig reconfigure({
     final System? target,
     final BuildType? buildType,
     final Map<String, dynamic>? vars,
@@ -151,10 +153,10 @@ final class BuildEnvironment {
     final Directory? scriptDirectory,
     final Directory? rootDirectory,
     final Directory? outputDirectory,
-  }) => BuildEnvironment(
+  }) => BuildConfig(
     target: target ?? this.target,
     buildType: buildType ?? this.buildType,
-    vars: vars ?? this.vars,
+    variables: vars ?? this.vars,
     workDirectory: workDirectory ?? this.workDirectory,
     outputDirectory: outputDirectory ?? this.outputDirectory,
     rootDirectory: rootDirectory ?? this.rootDirectory,

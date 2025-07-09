@@ -17,87 +17,91 @@
 
 import 'dart:io';
 
-import 'package:fireworks_scripts/environment.dart' as environment;
+import 'package:fireworks_scripts/environment.dart';
 import 'package:fireworks_scripts/process.dart';
 import 'package:path/path.dart' as path;
 
-const String repository =
-    "https://chromium.googlesource.com/chromium/tools/depot_tools.git";
-const List<String> requiredPrograms = const ["cmake", "git", "python"];
-
-final String repositoryName = path.basenameWithoutExtension(repository);
-
-final Directory repositoryDirectory = Directory(
-    path.join(
-        environment.workDirectory,
-        repositoryName
-    ));
-
-final Directory outputDirectory = Directory(path.join(
-  environment.outputDirectory,
-  "bin",
-  "dart-${environment.system}",
-));
-
-final Directory workDirectory = Directory(environment.workDirectory);
-
-final Directory fetchableDartDirectory = Directory(path.join(workDirectory.path, "dart"));
-final Directory dartRepositoryDirectory = Directory(path.join(fetchableDartDirectory.path, "sdk"));
-
-const String windowsAttentionMessage = """\n
-Please ensure you have the Windows 10 SDK installed.
-This can be installed separately or by checking the appropriate box in the Visual Studio Installer.
-The SDK Debugging Tools must also be installed.
-More information on https://github.com/dart-lang/sdk/blob/main/docs/Building.md
-""";
-
-final BuildProcess process = BuildProcess(
-    workingDirectory: workDirectory.path,
-    steps: [
-      BuildStep("Note for windows",
-        condition: () => Platform.isWindows,
-        run: (_) async {
-          stdout.writeln(windowsAttentionMessage);
-          return true;
-        }
-      ),
-      BuildStep("Check for available Programs",
-        condition: () => !environment.ensurePrograms(requiredPrograms),
-        run: (_) async {
-          stderr.writeln(
-            "\nPlease ensure the availability of all dependencies to proceed.",
+void main(List<String> args) async =>
+    await BuildConfig(
+          variables: {"environment_name": "dart_sdk_ci_build", "version": 1.0},
+        )
+        .override((config) {
+          const String repository =
+              "https://chromium.googlesource.com/chromium/tools/depot_tools.git";
+          final String repositoryName = path.basenameWithoutExtension(
+            repository,
           );
-          return false;
-        }
-      ),
-      BuildStep("Create directory",
-        condition: () => !workDirectory.existsSync(),
-        run: (_) async {
-          await workDirectory.create(recursive: true);
-          return workDirectory.exists();
-        }
-      ),
-      BuildStep("Clone repository",
-        command: CommandProperties(
-            program: "git",
-            arguments: [
-              "clone",
-              repository
-            ]
-        ),
-      ),
-      BuildStep("MacOS error precare",
-        condition: () => Platform.isMacOS,
-        command: CommandProperties(
-            program: "xcode",
-            arguments: [
-              "-select",
-              "-s",
-              "/Applications/Xcode.app/Contents/Developer"
-            ],
-          administrator: true
-        ),
-      ),
+          final String repositoryPath = path.join(
+            config.workDirectory.path,
+            repositoryName,
+          );
 
-    ]
-);
+          const String windowsAttentionMessage = """\n
+  Please ensure you have the Windows 10 SDK installed.
+  This can be installed separately or by checking the appropriate box in the Visual Studio Installer.
+  The SDK Debugging Tools must also be installed.
+  More information on https://github.com/dart-lang/sdk/blob/main/docs/Building.md
+  """;
+          return BuildConfig(
+            outputDirectory: Directory(
+              path.join(
+                config.outputDirectory.path,
+                config.target.string(),
+                "bin",
+                "dart",
+              ),
+            ),
+            variables: {
+              "windows_attention_message": windowsAttentionMessage,
+              "required_programs": ["git", "python", "cmake"],
+            },
+          );
+        })
+        .execute([
+          BuildStep(
+            "Note for windows",
+            condition: (env) => env.,
+            run: (env) async {
+              stdout.writeln(windowsAttentionMessage);
+              return true;
+            },
+          ),
+          BuildStep(
+            "Check for available Programs",
+            condition: () => !environment.ensurePrograms(requiredPrograms),
+            run: (_) async {
+              stderr.writeln(
+                "\nPlease ensure the availability of all dependencies to proceed.",
+              );
+              return false;
+            },
+          ),
+          BuildStep(
+            "Create directory",
+            condition: () => !workDirectory.existsSync(),
+            run: (_) async {
+              await workDirectory.create(recursive: true);
+              return workDirectory.exists();
+            },
+          ),
+          BuildStep(
+            "Clone repository",
+            command: CommandProperties(
+              program: "git",
+              arguments: ["clone", repository],
+            ),
+          ),
+          BuildStep(
+            "MacOS error precare",
+            condition: () => Platform.isMacOS,
+            command: CommandProperties(
+              program: "xcode",
+              arguments: [
+                "-select",
+                "-s",
+                "/Applications/Xcode.app/Contents/Developer",
+              ],
+              administrator: true,
+            ),
+          ),
+        ]);

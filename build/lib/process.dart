@@ -53,14 +53,14 @@ class BuildStep {
   final String name;
 
   /// Function that will run.
-  final Future<bool> Function(BuildEnvironment environment)? run;
+  final Future<bool> Function(BuildConfig environment)? run;
 
-  final CommandProperties Function(BuildEnvironment environment)? command;
+  final CommandProperties Function(BuildConfig environment)? command;
 
   /// If a false value received by run() or the command should terminate the [BuildProcess]
   final bool exitFail;
 
-  final bool Function(BuildEnvironment environment)? condition;
+  final bool Function(BuildConfig environment)? condition;
 
   /// If the process should get a spinner.
   /// Notice that any input to stdout or stderr will move the spinner to the last line.
@@ -78,7 +78,7 @@ class BuildStep {
   });
 
   Future<bool> execute({
-    required final BuildEnvironment environment,
+    required final BuildConfig environment,
     String message = "",
   }) async {
     final workDirectoryPath = environment.workDirectory.path;
