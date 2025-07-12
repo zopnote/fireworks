@@ -78,11 +78,9 @@ class BuildStep {
   });
 
   Future<bool> execute({
-    required final BuildConfig environment,
+    required final BuildConfig env,
     String message = "",
   }) async {
-    final workDirectoryPath = environment.workDirectory.path;
-
     if (message[message.length - 1] != " " && message.isNotEmpty) {
       message += " ";
     }
@@ -101,12 +99,12 @@ class BuildStep {
       stdout.writeln(message + name);
     }
     if (condition != null) {
-      if (!condition!(environment)) {
+      if (!condition!(env)) {
         return exitExecute(true);
       }
     }
     if (run != null) {
-      return exitExecute(await run!(environment));
+      return exitExecute(await run!(env));
     }
 
     if (this.command == null) {
@@ -118,7 +116,7 @@ class BuildStep {
       );
     }
 
-    final BuildStepCommand command = this.command!(environment);
+    final BuildStepCommand command = this.command!(env);
     final String program = command.administrator
         ? Platform.isWindows
               ? "powershell.exe"
@@ -130,7 +128,7 @@ class BuildStep {
       arguments = [
         "-Command",
         """
-        Set-Location -Path $workDirectoryPath;
+        Set-Location -Path ${env.workDirectoryPath};
         Start-Process -FilePath ${command.string} -Verb RunAs
         """,
       ];
@@ -139,7 +137,7 @@ class BuildStep {
     }
 
     final Map<String, String> processableEnvironment = {};
-    environment.variables.forEach((key, value) {
+    env.variables.forEach((key, value) {
       if (value is String) {
         processableEnvironment[key] = value;
       } else if (value is num) {
@@ -150,7 +148,7 @@ class BuildStep {
     final result = await Process.start(
       program,
       arguments,
-      workingDirectory: workDirectoryPath,
+      workingDirectory: env.workDirectoryPath,
       environment: processableEnvironment,
       includeParentEnvironment: true,
       mode: ProcessStartMode.normal,

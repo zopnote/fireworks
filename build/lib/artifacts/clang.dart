@@ -19,25 +19,14 @@ import 'dart:io';
 
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
+import 'package:fireworks.cli/command/runner.dart';
 import 'package:path/path.dart' as path;
 
-final BuildConfigCallback processConfig = (config) {
-  const String repositoryUrl = "https://github.com/llvm/llvm-project.git";
-  final String repositoryPath = path.join(
-    path.basenameWithoutExtension(repositoryUrl),
-  );
-  return config.reconfigure(
-    outputDirectory: Directory(
-      path.join(
-          config.outputDirectory.path, "bin", "clang"),
-    ),
-    variables: {
-      "repository_url": repositoryUrl,
-      "repository_path": repositoryPath,
-    },
-  );
-};
+BuildConfig config(BuildType buildType, System target) {
+  return BuildConfig("clang", buildType: buildType, target: target);
+}
 
+Future<int> main(List<String> args) async =>
 
 final List<BuildStep> processSteps = [
   BuildStep(
@@ -52,8 +41,16 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Clone repository",
-    condition: (env) =>
-        !Directory(env.variables["repository_path"]!).existsSync(),
+    condition: (env) {
+      env.variables["repository_url"] =
+          "https://github.com/llvm/llvm-project.git";
+      env.variables["repository_name"] = path.basenameWithoutExtension(
+        env.variables["repository_url"],
+      );
+      return !Directory(
+        path.join(env.workDirectoryPath, env.variables["repository_name"]!),
+      ).existsSync();
+    },
     command: (env) => BuildStepCommand(
       program: "git",
       arguments: [
@@ -70,14 +67,14 @@ final List<BuildStep> processSteps = [
   BuildStep(
     "CMake configuration",
     condition: (env) =>
-        !Directory("${env.workDirectory.path}/CMakeFiles").existsSync(),
+        !Directory("${env.workDirectoryPath}/CMakeFiles").existsSync(),
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments:
           [
-            "-S ${env.variables["repository_path"]!}/llvm",
-            "-B ${env.workDirectory.path}",
-            "-DCMAKE_INSTALL_PREFIX=${env.outputDirectory.path}",
+            "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
+            "-B ${env.workDirectoryPath}",
+            "-DCMAKE_INSTALL_PREFIX=${env.outputDirectoryPath}",
             "-DCMAKE_BUILD_TYPE=" +
                 {
                   BuildType.debug: "Debug",
@@ -108,7 +105,7 @@ final List<BuildStep> processSteps = [
       program: "cmake",
       arguments: [
         "--build",
-        env.workDirectory.path,
+        env.workDirectoryPath,
         "--config",
         {
           BuildType.debug: "Debug",
@@ -124,7 +121,7 @@ final List<BuildStep> processSteps = [
       program: "cmake",
       arguments: [
         "--install",
-        env.workDirectory.path,
+        env.workDirectoryPath,
         "--config",
         {
           BuildType.debug: "Debug",
@@ -133,5 +130,5 @@ final List<BuildStep> processSteps = [
         }[env.buildType]!,
       ],
     ),
-  )
+  ),
 ];

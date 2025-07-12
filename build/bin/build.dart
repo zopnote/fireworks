@@ -23,120 +23,6 @@ import 'package:fireworks.cli/build/process.dart';
 import 'package:fireworks.cli/command/runner.dart';
 import 'package:path/path.dart' as path;
 
-const double version = 1.0;
-
-/// Host target couples supported by the build scripts for building fireworks.
-final supportedCouples = {
-  System(
-    platform: SystemPlatform.windows,
-    processor: SystemProcessor.x86_64,
-  ).string(): [
-    System(
-      platform: SystemPlatform.windows,
-      processor: SystemProcessor.x86_64,
-    ).string(),
-    System(
-      platform: SystemPlatform.windows,
-      processor: SystemProcessor.arm64,
-    ).string(),
-  ],
-
-  System(
-    platform: SystemPlatform.windows,
-    processor: SystemProcessor.arm64,
-  ).string(): [
-    System(
-      platform: SystemPlatform.windows,
-      processor: SystemProcessor.arm64,
-    ).string(),
-  ],
-  System(
-    platform: SystemPlatform.linux,
-    processor: SystemProcessor.x86_64,
-  ).string(): [
-    System(
-      platform: SystemPlatform.linux,
-      processor: SystemProcessor.x86_64,
-    ).string(),
-    System(
-      platform: SystemPlatform.linux,
-      processor: SystemProcessor.arm64,
-    ).string(),
-    System(
-      platform: SystemPlatform.linux,
-      processor: SystemProcessor.riscv64,
-    ).string(),
-  ],
-
-  System(
-    platform: SystemPlatform.macos,
-    processor: SystemProcessor.arm64,
-  ).string(): [
-    System(
-      platform: SystemPlatform.macos,
-      processor: SystemProcessor.arm64,
-    ).string(),
-  ],
-};
-
-/// All registered build targets
-final Map<String, (BuildConfigCallback, List<BuildStep>)> targets = {
-  "clang_artifacts": (clang.processConfig, clang.processSteps),
-};
-
-final extendedConfig = (BuildType buildType, System target) =>
-    BuildConfig.overrideDefault((config) {
-      return config.reconfigure();
-    });
-
-final Command command = Command(
-  "build",
-  description:
-      "\n"
-      "dart run build.dart <target>",
-  run: (cmd, arg, flags) async {
-    for (Flag flag in flags) {
-      if (flag.name == "list") {
-        stdout.writeln("Available targets: \n" + targets.keys.join(",\n"));
-        await stdout.flush();
-        return CommandResponse();
-      }
-    }
-
-    if (supportedCouples[System(
-          platform: SystemPlatform.windows,
-          processor: SystemProcessor.x86_64,
-        ).string()] ==
-        null) {
-      stderr.writeln(
-        "Your host system is not supported. List of supported host systems: ${supportedCouples.keys.join(", ")}",
-      );
-    }
-
-    if (targets.containsKey(arg)) {
-      Flag? targetFlag = null;
-      Flag? verboseFlag = null;
-      flags.forEach((flag) {
-        if (flag.name == "target") targetFlag = flag;
-        if (flag.name == "verbose") verboseFlag = flag;
-      });
-
-      System target;
-      return CommandResponse(
-        isError: !await extendedConfig(
-          BuildType.releaseDebug,
-          System.current(),
-        ).override(targets[arg]!.$1).execute(targets[arg]!.$2),
-      );
-    }
-    return CommandResponse(
-      message:
-          "Please specify a valid build target as argument or a sub command.",
-      printSyntax: cmd,
-    );
-  },
-);
-
 Future<int> main(List<String> args) async =>
     await run(
       rawArgs: args,
@@ -157,3 +43,76 @@ Future<int> main(List<String> args) async =>
     )
     ? 0
     : 1;
+
+/// All registered build targets
+final Map<
+  String,
+  (BuildConfig Function(BuildType type, System target), List<BuildStep>)
+>
+targets = {"clang_artifacts": (clang.config, clang.processSteps)};
+
+/// Host target couples supported by the build scripts for building fireworks.
+final supportedCouples = {
+  System(SystemPlatform.windows, SystemProcessor.x86_64).string(): [
+    System(SystemPlatform.windows, SystemProcessor.x86_64).string(),
+    System(SystemPlatform.windows, SystemProcessor.arm64).string(),
+  ],
+  System(SystemPlatform.windows, SystemProcessor.arm64).string(): [
+    System(SystemPlatform.windows, SystemProcessor.arm64).string(),
+  ],
+  System(SystemPlatform.linux, SystemProcessor.x86_64).string(): [
+    System(SystemPlatform.linux, SystemProcessor.x86_64).string(),
+    System(SystemPlatform.linux, SystemProcessor.arm64).string(),
+    System(SystemPlatform.linux, SystemProcessor.riscv64).string(),
+  ],
+  System(SystemPlatform.macos, SystemProcessor.arm64).string(): [
+    System(SystemPlatform.macos, SystemProcessor.arm64).string(),
+  ],
+};
+
+final Command command = Command(
+  "build",
+  description:
+      "\n"
+      "dart run build.dart <target>",
+  run: (cmd, arg, flags) async {
+    for (Flag flag in flags) {
+      if (flag.name == "list") {
+        stdout.writeln("Available targets: \n" + targets.keys.join(",\n"));
+        await stdout.flush();
+        return CommandResponse();
+      }
+    }
+
+    if (supportedCouples[System(
+          SystemPlatform.windows,
+          SystemProcessor.x86_64,
+        ).string()] ==
+        null) {
+      stderr.writeln(
+        "Your host system is not supported. List of supported host systems: ${supportedCouples.keys.join(", ")}",
+      );
+    }
+
+    if (targets.containsKey(arg)) {
+      Flag? targetFlag = null;
+      Flag? verboseFlag = null;
+      flags.forEach((flag) {
+        if (flag.name == "target") targetFlag = flag;
+        if (flag.name == "verbose") verboseFlag = flag;
+      });
+
+      System target = System.current();
+      return CommandResponse(
+        isError: !await (targets[arg]!
+            .$1(BuildType.release, target)
+            .execute(targets[arg]!.$2)),
+      );
+    }
+    return CommandResponse(
+      message:
+          "Please specify a valid build target as argument or a sub command.",
+      printSyntax: cmd,
+    );
+  },
+);

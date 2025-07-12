@@ -21,35 +21,59 @@ import 'dart:io';
 import 'process.dart';
 import 'package:path/path.dart' as path;
 
-const String _hostSystemKey = "host_system";
-const String _hostSystemNameKey = "host_system_name";
-const String _hostSystemProcessorKey = "host_system_processor";
-const String _targetSystemKey = "target_system";
-const String _targetSystemNameKey = "target_system_name";
-const String _targetSystemProcessorKey = "target_system_processor";
-const String _workDirectoryKey = "work_directory";
-const String _scriptDirectoryKey = "script_directory";
-const String _projectRootDirectoryKey = "root_directory";
-const String _outputDirectoryKey = "output_directory";
+/**
+ * Representing the build type.
+ *
+ * [debug], [releaseDebug], [release]
+ */
+enum BuildType {
+  /**
+   * Referees to a build including assertions and debug symbols as well as no optimizations.
+   */
+  debug("debug"),
 
-enum BuildType { debug, releaseDebug, release }
+  /**
+   * Referees to a build with assertions and debug symbols as well as all optimizations.
+   */
+  releaseDebug("debug_release"),
 
+  /**
+   * Referees to a build without debug symbols and assertions as well as all optimizations.
+   */
+  release("release");
+
+  const BuildType(this.name);
+
+  /**
+   * The name of a build type, not corresponding to third parties.
+   */
+  final String name;
+}
+
+/**
+ * Representing a specific operating system.
+ */
 enum SystemPlatform { windows, android, linux, ios, macos }
 
+/**
+ * Representing a specific processor architecture.
+ */
 enum SystemProcessor { x86_64, x86, arm64, arm, riscv64 }
 
-/// Representing processor architecture, operating system couple.
+/**
+ * Operating system, processor couple to determine the full platform in context.
+ */
 final class System {
   final SystemPlatform platform;
   final SystemProcessor processor;
-  System({required this.platform, required this.processor});
+  System(this.platform, this.processor);
   factory System.current() {
     final String system = Platform.version.split("\"")[1];
     return System(
-      platform: SystemPlatform.values.firstWhere(
+      SystemPlatform.values.firstWhere(
         (i) => i.name == system.split("_").first,
       ),
-      processor: {
+      {
         "x64": SystemProcessor.x86_64,
         "arm64": SystemProcessor.arm64,
         "arm": SystemProcessor.arm,
@@ -57,142 +81,107 @@ final class System {
       }[system.split("_").last]!,
     );
   }
+
+  /**
+   *  A formatted version of System for use of representation.
+   */
   String string() {
     return "${platform.name}_${processor.name}";
   }
 }
 
-typedef BuildConfigCallback = BuildConfig Function(BuildConfig config);
+/**
+ * Represents a build configuration with information of the environment, the file system as well as host and targets.
+ *
+ * Manages the build life cycle with [BuildStep].
+ */
+class BuildConfig {
+  /**
+   * Name of the configuration to ensure no data conflicts between different build artifacts
+   * a build configuration is used for. The name makes clear what is currently built with
+   * the current configuration.
+   */
+  final String name;
 
-final class BuildConfig {
-  BuildConfig({
-    final System? target,
-    this.buildType = BuildType.debug,
-    final Map<String, dynamic>? variables,
-    final Directory? workDirectory,
-    final Directory? scriptDirectory,
-    final Directory? rootDirectory,
-    final Directory? outputDirectory,
-  }) {
-    late final Directory defaultScriptDirectory;
-    if (Platform.isWindows) {
-      defaultScriptDirectory = Directory(
-        path.dirname(Platform.script.path).substring(1),
-      );
-    } else {
-      defaultScriptDirectory = Directory(path.dirname(Platform.script.path));
-    }
-
-    Directory defaultRootDirectory = Directory(defaultScriptDirectory.path);
-    while (true) {
-      if (Directory(
-        path.join(defaultRootDirectory.path, ".git"),
-      ).existsSync()) {
-        defaultRootDirectory = defaultRootDirectory;
-        break;
-      }
-      defaultRootDirectory = Directory(path.dirname(defaultRootDirectory.path));
-    }
-
-    final Directory defaultOutputDirectory = Directory(
-      path.join(defaultRootDirectory.path, "out"),
-    );
-
-    final Directory defaultWorkDirectory = Directory(
-      path.join(defaultOutputDirectory.path, ".$scriptName"),
-    );
-
-    this.workDirectory = workDirectory ?? defaultWorkDirectory;
-    this.scriptDirectory = scriptDirectory ?? defaultScriptDirectory;
-    this.rootDirectory = rootDirectory ?? defaultRootDirectory;
-    this.outputDirectory = outputDirectory ?? defaultOutputDirectory;
-    this.target = target ?? System.current();
-
-    if (variables != null) {
-      this.variables = variables;
-    } else {
-      this.variables = {};
-    }
-    this.variables.addAll({
-      _hostSystemKey: host.string(),
-      _hostSystemNameKey: host.platform,
-      _hostSystemProcessorKey: host.processor,
-      _targetSystemKey: this.target.string(),
-      _targetSystemNameKey: this.target.platform,
-      _targetSystemProcessorKey: this.target.processor,
-      _workDirectoryKey: this.workDirectory,
-      _scriptDirectoryKey: this.scriptDirectory,
-      _projectRootDirectoryKey: this.rootDirectory,
-      _outputDirectoryKey: this.outputDirectory,
-    });
-  }
-
-  factory BuildConfig.overrideDefault(final BuildConfigCallback callback) {
-    return BuildConfig().override(callback);
-  }
-
-  BuildConfig override(final BuildConfigCallback callback) {
-    final BuildConfig call = callback(this);
-    return BuildConfig(
-      variables: {}
-        ..addAll(this.variables)
-        ..addAll(call.variables),
-      outputDirectory: call.outputDirectory,
-      target: call.target,
-      buildType: call.buildType,
-      rootDirectory: call.rootDirectory,
-      scriptDirectory: call.scriptDirectory,
-      workDirectory: call.workDirectory,
-    );
-  }
-
-  BuildConfig reconfigure({
-    final System? target,
-    final BuildType? buildType,
-    final Map<String, dynamic>? variables,
-    final Directory? workDirectory,
-    final Directory? scriptDirectory,
-    final Directory? rootDirectory,
-    final Directory? outputDirectory,
-  }) => BuildConfig(
-    target: target ?? this.target,
-    buildType: buildType ?? this.buildType,
-    variables: variables ?? this.variables,
-    workDirectory: workDirectory ?? this.workDirectory,
-    outputDirectory: outputDirectory ?? this.outputDirectory,
-    rootDirectory: rootDirectory ?? this.rootDirectory,
-    scriptDirectory: scriptDirectory ?? this.scriptDirectory,
-  );
+  /**
+   * Environment variables that get applied to process commands and are available in the entire configuration.
+   */
+  late final Map<String, dynamic> variables;
 
   final BuildType buildType;
 
+  /**
+   * Path relative to the output directory to install binaries at.
+   */
+  final List<String> _installPath;
+
+  /**
+   * The target system of this build configuration.
+   * If not set, it will be automatically set to [System.current()].
+   */
   late final System target;
 
+  /**
+   * The current Platform, determined by the Dart VM.
+   */
   final System host = System.current();
 
-  late final Map<String, dynamic> variables;
+  /**
+   * Bare output directory of the project binaries.
+   */
+  String get outputDirectoryPath => path.join(
+    rootDirectoryPath, "out");
 
-  /// Name of the script run as entry of the dart isolate.
-  static String scriptName = path.basenameWithoutExtension(
-    Platform.script.path,
+  /**
+   * Root of the repository the dart scripts got executed.
+   */
+  String get rootDirectoryPath {
+    Directory rootDirectory = Directory(scriptDirectoryPath);
+    while (true) {
+      if (Directory(path.join(rootDirectory.path, ".git")).existsSync()) {
+        return rootDirectory.path;
+      }
+      rootDirectory = Directory(path.dirname(rootDirectory.path));
+    }
+  }
+
+  String get installDirectoryPath => path.joinAll(
+    [outputDirectoryPath, "${this.name}-${target.string()}-${buildType.name}"] +
+        this._installPath,
   );
 
-  /// The directory where work has to be done.
-  late final Directory workDirectory;
+  /**
+   * Temporal directory for files.
+   */
+  String get workDirectoryPath => path.join(
+    outputDirectoryPath,
+    ".build-files", this.target.string()
+  );
 
-  /// Notice that Platform.script is the script ran at initialization, not the script we are in.
-  /// Therefore scriptDirectory will be the directory of the script that initialized the entire tree of imports etc.
-  late final Directory scriptDirectory;
+  /**
+   * Directory of the script run in this isolate.
+   */
+  String get scriptDirectoryPath => Platform.isWindows
+      ? path.dirname(Platform.script.path).substring(1)
+      : path.dirname(Platform.script.path);
 
-  /// Project root directory, determined by the repository root.
-  late final Directory rootDirectory;
-
-  late final Directory outputDirectory;
-
+  BuildConfig(
+    this.name, {
+    List<String> installPath = const [],
+    final System? target,
+    this.buildType = BuildType.debug,
+    final Map<String, dynamic>? variables,
+  }) : _installPath = installPath,
+       this.target = target ?? System.current(),
+       this.variables = variables ?? {};
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> toJsonMap(Map<String, dynamic> map) {
-      final Map<String, dynamic> jsonMap = {};
+      final Map<String, dynamic> jsonMap = {
+        "host": host.string(),
+        "target": this.target.string(),
+        "install_path": this._installPath.join("/"),
+      };
       map.forEach((key, val) {
         if (val is String) {
           jsonMap[key] = val;
@@ -210,7 +199,36 @@ final class BuildConfig {
       });
       return jsonMap;
     }
+
     return toJsonMap(variables);
+  }
+
+  Future<bool> execute(List<BuildStep> steps) async {
+    if (!Directory(this.outputDirectoryPath).existsSync()) {
+      Directory(this.outputDirectoryPath).createSync(recursive: true);
+    }
+    if (!Directory(this.installDirectoryPath).existsSync()) {
+      Directory(this.installDirectoryPath).createSync(recursive: true);
+    }
+    if (!Directory(this.workDirectoryPath).existsSync()) {
+      Directory(this.workDirectoryPath).createSync(recursive: true);
+    }
+
+    File(
+      path.join(this.installDirectoryPath, "${this.name}_build.json"),
+    ).writeAsStringSync(jsonEncode(toJson()));
+
+    bool result;
+    for (int i = 0; i < steps.length - 1; i++) {
+      result = await steps[i].execute(
+        env: this,
+        message: "[${i + 1}/${steps.length}] ",
+      );
+      if (!result) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static bool ensurePrograms(List<String> requiredPrograms) {
@@ -254,30 +272,5 @@ final class BuildConfig {
       }
     }
     return isAllFound;
-  }
-
-  Future<bool> execute(List<BuildStep> steps) async {
-    if (!this.outputDirectory.existsSync()) {
-      this.outputDirectory.createSync(recursive: true);
-    }
-    if (!this.workDirectory.existsSync()) {
-      this.workDirectory.createSync(recursive: true);
-    }
-
-    File(
-      path.join(this.outputDirectory.path, "build_config.json"),
-    ).writeAsStringSync(jsonEncode(toJson()));
-
-    bool result;
-    for (int i = 0; i < steps.length - 1; i++) {
-      result = await steps[i].execute(
-        environment: this,
-        message: "[${i + 1}/${steps.length}] ",
-      );
-      if (!result) {
-        return false;
-      }
-    }
-    return true;
   }
 }
