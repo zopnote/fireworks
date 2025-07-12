@@ -1,8 +1,10 @@
-name: fireworks_scripts
-description: Continuous integration scripts of the Fireworks engine.
+name: fireworks.build
+description: Build scripts for continuous integration and development of the Fireworks engine.
 version: 1.0.0
 publish_to: "none"
 environment: 
   sdk: ^3.8.0
 dependencies:
   path: ^1.9.1
+  fireworks.cli:
+    path: ../packages/fireworks_cli

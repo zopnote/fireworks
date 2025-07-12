@@ -18,9 +18,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'environment.dart';
+import 'config.dart';
 
-final class CommandProperties {
+final class BuildStepCommand {
   final String program;
   final List<String> arguments;
 
@@ -34,7 +34,7 @@ final class CommandProperties {
   /// on linux and macOS a sudo will be added.
   final bool administrator;
 
-  const CommandProperties({
+  const BuildStepCommand({
     required this.program,
     required this.arguments,
     this.shell = false,
@@ -55,7 +55,7 @@ class BuildStep {
   /// Function that will run.
   final Future<bool> Function(BuildConfig environment)? run;
 
-  final CommandProperties Function(BuildConfig environment)? command;
+  final BuildStepCommand Function(BuildConfig environment)? command;
 
   /// If a false value received by run() or the command should terminate the [BuildProcess]
   final bool exitFail;
@@ -118,7 +118,7 @@ class BuildStep {
       );
     }
 
-    final CommandProperties command = this.command!(environment);
+    final BuildStepCommand command = this.command!(environment);
     final String program = command.administrator
         ? Platform.isWindows
               ? "powershell.exe"
@@ -139,7 +139,7 @@ class BuildStep {
     }
 
     final Map<String, String> processableEnvironment = {};
-    environment.vars.forEach((key, value) {
+    environment.variables.forEach((key, value) {
       if (value is String) {
         processableEnvironment[key] = value;
       } else if (value is num) {

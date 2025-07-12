@@ -15,9 +15,10 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:fireworks_scripts/process.dart';
+import 'process.dart';
 import 'package:path/path.dart' as path;
 
 const String _hostSystemKey = "host_system";
@@ -31,26 +32,11 @@ const String _scriptDirectoryKey = "script_directory";
 const String _projectRootDirectoryKey = "root_directory";
 const String _outputDirectoryKey = "output_directory";
 
-enum BuildType {
-  debug,
-  releaseDebug,
-  release
-}
+enum BuildType { debug, releaseDebug, release }
 
-enum SystemPlatform {
-  windows,
-  android,
-  linux,
-  ios,
-  macos
-}
-enum SystemProcessor {
-  x86_64,
-  x86,
-  arm64,
-  arm,
-  riscv64
-}
+enum SystemPlatform { windows, android, linux, ios, macos }
+
+enum SystemProcessor { x86_64, x86, arm64, arm, riscv64 }
 
 /// Representing processor architecture, operating system couple.
 final class System {
@@ -67,8 +53,8 @@ final class System {
         "x64": SystemProcessor.x86_64,
         "arm64": SystemProcessor.arm64,
         "arm": SystemProcessor.arm,
-        "riscv64": SystemProcessor.riscv64
-      }[system.split("_").last]!
+        "riscv64": SystemProcessor.riscv64,
+      }[system.split("_").last]!,
     );
   }
   String string() {
@@ -123,11 +109,11 @@ final class BuildConfig {
     this.target = target ?? System.current();
 
     if (variables != null) {
-      this.vars = variables;
+      this.variables = variables;
     } else {
-      this.vars = {};
+      this.variables = {};
     }
-    this.vars.addAll({
+    this.variables.addAll({
       _hostSystemKey: host.string(),
       _hostSystemNameKey: host.platform,
       _hostSystemProcessorKey: host.processor,
@@ -141,14 +127,29 @@ final class BuildConfig {
     });
   }
 
-  BuildConfig override(
-    final BuildConfigCallback callback,
-  ) => callback(this);
+  factory BuildConfig.overrideDefault(final BuildConfigCallback callback) {
+    return BuildConfig().override(callback);
+  }
+
+  BuildConfig override(final BuildConfigCallback callback) {
+    final BuildConfig call = callback(this);
+    return BuildConfig(
+      variables: {}
+        ..addAll(this.variables)
+        ..addAll(call.variables),
+      outputDirectory: call.outputDirectory,
+      target: call.target,
+      buildType: call.buildType,
+      rootDirectory: call.rootDirectory,
+      scriptDirectory: call.scriptDirectory,
+      workDirectory: call.workDirectory,
+    );
+  }
 
   BuildConfig reconfigure({
     final System? target,
     final BuildType? buildType,
-    final Map<String, dynamic>? vars,
+    final Map<String, dynamic>? variables,
     final Directory? workDirectory,
     final Directory? scriptDirectory,
     final Directory? rootDirectory,
@@ -156,7 +157,7 @@ final class BuildConfig {
   }) => BuildConfig(
     target: target ?? this.target,
     buildType: buildType ?? this.buildType,
-    variables: vars ?? this.vars,
+    variables: variables ?? this.variables,
     workDirectory: workDirectory ?? this.workDirectory,
     outputDirectory: outputDirectory ?? this.outputDirectory,
     rootDirectory: rootDirectory ?? this.rootDirectory,
@@ -169,7 +170,7 @@ final class BuildConfig {
 
   final System host = System.current();
 
-  late final Map<String, dynamic> vars;
+  late final Map<String, dynamic> variables;
 
   /// Name of the script run as entry of the dart isolate.
   static String scriptName = path.basenameWithoutExtension(
@@ -188,20 +189,28 @@ final class BuildConfig {
 
   late final Directory outputDirectory;
 
-  Map<String, String> toJson() {
-    final Map<String, String> jsonMap = {};
-    vars.forEach((key, value) {
-      if (value is String) {
-        jsonMap[key] = value;
-      } else if (value is num || value is List<String>) {
-        jsonMap[key] = value.toString();
-      } else if (value is SystemPlatform || value is SystemProcessor) {
-        jsonMap[key] = value.platform;
-      } else if (value is Directory) {
-        jsonMap[key] = value.path;
-      }
-    });
-    return jsonMap;
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> toJsonMap(Map<String, dynamic> map) {
+      final Map<String, dynamic> jsonMap = {};
+      map.forEach((key, val) {
+        if (val is String) {
+          jsonMap[key] = val;
+        } else if (val is num || val is List<String>) {
+          jsonMap[key] = val;
+        } else if (val is SystemPlatform) {
+          jsonMap[key] = val.name;
+        } else if (val is SystemProcessor) {
+          jsonMap[key] = val.name;
+        } else if (val is Directory) {
+          jsonMap[key] = val.path;
+        } else if (val is Map<String, dynamic>) {
+          jsonMap[key] = toJsonMap(val);
+        }
+      });
+      return jsonMap;
+    }
+    return toJsonMap(variables);
   }
 
   static bool ensurePrograms(List<String> requiredPrograms) {
@@ -248,6 +257,17 @@ final class BuildConfig {
   }
 
   Future<bool> execute(List<BuildStep> steps) async {
+    if (!this.outputDirectory.existsSync()) {
+      this.outputDirectory.createSync(recursive: true);
+    }
+    if (!this.workDirectory.existsSync()) {
+      this.workDirectory.createSync(recursive: true);
+    }
+
+    File(
+      path.join(this.outputDirectory.path, "build_config.json"),
+    ).writeAsStringSync(jsonEncode(toJson()));
+
     bool result;
     for (int i = 0; i < steps.length - 1; i++) {
       result = await steps[i].execute(

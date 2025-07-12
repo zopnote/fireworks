@@ -20,7 +20,7 @@ jobs:
         working-directory: ./build/ci
 
       - name: Build process
-        run: dart run ./build/ci/bin/build_clang.dart
+        run: dart run ./build/ci/bin/clang.dart
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
