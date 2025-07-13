@@ -2,3 +2,6 @@
 /out/
 /packages/fireworks_cli/.dart_tool/
 /packages/fireworks_cli/pubspec.lock
+/packages/app/.dart_tool/
+/packages/app/pubspec.lock
+
