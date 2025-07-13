@@ -15,63 +15,71 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'package:fireworks/command/execute/doctor.dart';
-import 'package:fireworks/command/runner.dart';
+import 'package:fireworks.cli/command/runner.dart';
+import 'package:fireworks_app/command/doctor.dart';
+import 'dart:core';
 
-void main(List<String> args) => run(
-  rawArgs: args,
-  command: Command(
-    "fireworks",
+Future<int> main(List<String> args) => execute(
+  args,
+  Command(
+    use: "fireworks",
     description: "Fireworks commandline tooling for manage projects.",
-    run:
-        (cur, arg, flags) {
-          if (arg.isNotEmpty) return CommandResponse("\"$arg\" is no valid sub command.", printSyntax: cur, isError: true);
-         return CommandResponse("No arguments specified.", printSyntax: cur);
-        },
+    run: (data) {
+      if (data.arg.isNotEmpty)
+        return CommandResponse(
+          message: "\"${data.arg}\" is no valid sub command.",
+          syntax: data.cmd,
+          error: true,
+        );
+      return CommandResponse(
+        message: "No arguments specified.",
+        syntax: data.cmd,
+      );
+    },
     subCommands: [
       Command(
-        "doctor",
+        use: "doctor",
         description: "Checks the environment for usability.",
         run: doctor,
       ),
       Command(
-        "create",
+        use: "create",
         description: "Creates a new project",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
       Command(
-        "run",
+        use: "run",
         description: "Runs the project in debug configuration.",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
       Command(
-        "reload",
+        use: "reload",
         description: "Hot reload the changes of the project.",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
       Command(
-        "build",
+        use: "build",
         description: "Build the project for shipping on multiple platforms.",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
       Command(
-        "get",
+        use: "get",
         description:
             "Load the cache and information necessary for tooling and dependencies.",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
       Command(
-        "version",
+        use: "version",
         description: "Shows the version of the tooling.",
-        run: (_, _, _) => CommandResponse("Unimplemented.", isError: true),
+        run: (_) => CommandResponse(message: "Unimplemented.", error: true),
       ),
     ],
   ),
   globalFlags: const [
-    Flag("help", description: "Shows helpful description."),
+    Flag(name: "help", description: "Shows helpful description."),
     Flag(
-      "verbose",
+      name: "verbose",
       description: "Enables additional information about processes.",
-    )
+    ),
   ],
 );

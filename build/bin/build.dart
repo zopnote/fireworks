@@ -17,39 +17,37 @@
 
 import 'dart:io';
 
-import 'package:fireworks.build/artifacts/clang.dart' as clang;
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
 import 'package:fireworks.cli/command/runner.dart';
-import 'package:path/path.dart' as path;
 
-Future<int> main(List<String> args) async =>
-    await run(
-      rawArgs: args,
-      command: command,
-      globalFlags: [
-        Flag(
-          "verbose",
-          description: "Prints extra information about the process.",
-        ),
-        Flag(
-          "target",
-          description: "Target for cross compilation.",
-          value: System.current().string(),
-          overview: supportedCouples[System.current().string()] ?? [],
-        ),
-        Flag("list", description: "List all build targets."),
-      ],
-    )
-    ? 0
-    : 1;
+Future<int> main(List<String> args) => execute(
+  args,
+  Command(
+    use: "build",
+    description:
+    "\ndart run build.dart <target>",
+    run: build,
+  ),
+  globalFlags: [
+    Flag(
+      name: "verbose",
+      description: "Prints extra information about the process.",
+    ),
+    Flag(
+      name: "target",
+      description: "Target for cross compilation.",
+      value: System.current().string(),
+      overview: supportedCouples[System.current().string()] ?? [],
+    ),
+    Flag(name: "list", description: "List all build targets."),
+  ],
+);
 
 /// All registered build targets
-final Map<
-  String,
-  (BuildConfig Function(BuildType type, System target), List<BuildStep>)
->
-targets = {"clang_artifacts": (clang.config, clang.processSteps)};
+final Map<String, Future<int> Function()> targets = {
+  "clang_artifacts": (() async => await main([])),
+};
 
 /// Host target couples supported by the build scripts for building fireworks.
 final supportedCouples = {
@@ -70,49 +68,39 @@ final supportedCouples = {
   ],
 };
 
-final Command command = Command(
-  "build",
-  description:
-      "\n"
-      "dart run build.dart <target>",
-  run: (cmd, arg, flags) async {
-    for (Flag flag in flags) {
-      if (flag.name == "list") {
-        stdout.writeln("Available targets: \n" + targets.keys.join(",\n"));
-        await stdout.flush();
-        return CommandResponse();
-      }
+CommandRunner build = (data) async {
+  for (Flag flag in data.flags) {
+    if (flag.name == "list") {
+      stdout.writeln("Available targets: \n" + targets.keys.join(",\n"));
+      await stdout.flush();
+      return CommandResponse();
     }
+  }
 
-    if (supportedCouples[System(
-          SystemPlatform.windows,
-          SystemProcessor.x86_64,
-        ).string()] ==
-        null) {
-      stderr.writeln(
-        "Your host system is not supported. List of supported host systems: ${supportedCouples.keys.join(", ")}",
-      );
-    }
-
-    if (targets.containsKey(arg)) {
-      Flag? targetFlag = null;
-      Flag? verboseFlag = null;
-      flags.forEach((flag) {
-        if (flag.name == "target") targetFlag = flag;
-        if (flag.name == "verbose") verboseFlag = flag;
-      });
-
-      System target = System.current();
-      return CommandResponse(
-        isError: !await (targets[arg]!
-            .$1(BuildType.release, target)
-            .execute(targets[arg]!.$2)),
-      );
-    }
-    return CommandResponse(
-      message:
-          "Please specify a valid build target as argument or a sub command.",
-      printSyntax: cmd,
+  if (supportedCouples[System(
+    SystemPlatform.windows,
+    SystemProcessor.x86_64,
+  ).string()] ==
+      null) {
+    stderr.writeln(
+      "Your host system is not supported. List of supported host systems: ${supportedCouples.keys.join(", ")}",
     );
-  },
-);
+  }
+
+  if (targets.containsKey(arg)) {
+    Flag? targetFlag = null;
+    Flag? verboseFlag = null;
+    flags.forEach((flag) {
+      if (flag.name == "target") targetFlag = flag;
+      if (flag.name == "verbose") verboseFlag = flag;
+    });
+
+    System target = System.current();
+    return CommandResponse(error: await targets[arg]!() != 0);
+  }
+  return CommandResponse(
+  message:
+  "Please specify a valid build target as argument or a sub command.",
+  syntax: cmd,
+  );
+};

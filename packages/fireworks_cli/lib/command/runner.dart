@@ -15,6 +15,7 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
+import 'dart:async';
 import 'dart:io';
 
 /**
@@ -23,8 +24,8 @@ import 'dart:io';
  * If it is a [String] flag the value is set to a non-empty string.
  */
 final class Flag {
-  const Flag(
-    this.name, {
+  const Flag({
+    required this.name,
     this.description = "",
     this.value = "",
     this.overview = const [],
@@ -43,19 +44,15 @@ final class Flag {
  * In positive as well in error cases a message has to be provided.
  */
 final class CommandResponse {
-  const CommandResponse({
-    this.message = "",
-    this.isError = false,
-    this.printSyntax,
-  });
-  final bool isError;
+  const CommandResponse({this.message = "", this.error = false, this.syntax});
+  final bool error;
   final String message;
-  final Command? printSyntax;
+  final Command? syntax;
 }
 
 final class Command {
-  const Command(
-    this.use, {
+  const Command({
+    required this.use,
     required this.description,
     required this.run,
     this.hidden = false,
@@ -69,12 +66,19 @@ final class Command {
   final bool hidden;
   final List<Flag> flags;
   final List<Command> subCommands;
-  final Future<CommandResponse> Function(
-    Command cur,
-    String argument,
-    List<Flag> flags,
-  )
-  run;
+  final CommandRunner run;
+}
+typedef CommandRunner = FutureOr<CommandResponse> Function(_RunData data);
+final class _RunData {
+  final Command cmd;
+  final String arg;
+  final List<Flag> flags;
+
+  _RunData({
+    required this.cmd,
+    required this.arg,
+    required this.flags,
+  });
 }
 
 /**
@@ -122,73 +126,68 @@ String syntax(Command cmd) {
  * subcommands or flags to it. At the end one [Command].run() function is
  * determined and will be executed.
  */
-Future<bool> run({
-  required List<String> rawArgs,
-  required Command command,
+Future<int> execute(List<String> args,
+  Command command, {
   List<Flag> globalFlags = const [],
 }) async {
   Command current = command;
   String arg = "";
 
-  for (String rawArg in rawArgs) {
+  for (String raw in args) {
+    if (raw.startsWith("--")) continue;
     bool complete = false;
     for (Command subCommand in current.subCommands) {
-      if (rawArg == subCommand.use) {
+      if (raw == subCommand.use) {
         current = subCommand;
         complete = true;
         break;
       }
     }
     if (!complete) {
-      arg = rawArg;
+      arg = raw;
       break;
     }
   }
 
-  final List<String> acceptableFlags = [];
-  void Function(Flag flag) addName = (flag) {
-    acceptableFlags.add(flag.name);
-  };
-  current.flags.forEach(addName);
-  globalFlags.forEach(addName);
-
   final List<Flag> flags = [];
-  void Function(String arg) addFlag = (arg) {
+  for (String flagArg in args.where(
+    (arg) => arg.startsWith("--"),
+  )) {
     Flag flag = Flag(
-      arg.contains("=") ? arg.split("=").first.substring(2) : arg.substring(2),
-      value: arg.contains("=") ? arg.split("=").last : "",
+      name: flagArg.contains("=")
+          ? flagArg.split("=").first.substring(2)
+          : flagArg.substring(2),
+      value: flagArg.contains("=") ? flagArg.split("=").last : "",
     );
-    if (!acceptableFlags.contains(flag.name)) {
-      stdout.writeln(
-        "The given flag with the name ${flag.name} isn't avertable.",
-      );
-      return;
+    if ((current.flags.map((e) => e.name).toList()
+          ..addAll(globalFlags.map((e) => e.name)))
+        .contains(flag.name)) {
+      flags.add(flag);
+    } else {
+      stdout.writeln("${flag.name} is ignored in this context.");
     }
-    flags.add(flag);
-  };
-
-  for (String flag in rawArgs.where((arg) => arg.startsWith("--"))) {
-    addFlag(flag);
   }
 
-  CommandResponse response = await current.run(current, arg, flags);
-  if (response.printSyntax != null) {
-    stdout.writeln(syntax(response.printSyntax!));
+  CommandResponse response = await current.run(
+    _RunData(cmd: current, arg: arg, flags: flags),
+  );
+  if (response.syntax != null) {
+    stdout.writeln(syntax(response.syntax!));
     if (globalFlags.isNotEmpty) {
       stdout.writeln(_flagSyntax(globalFlags, "Global"));
     }
   }
 
-  if (response.isError) {
+  if (response.error) {
     stderr.writeln(
       response.message.isNotEmpty
           ? "\nAn error occurred: ${response.message}"
           : "\nAn error occurred.",
     );
-    return false;
+    return 1;
   }
   if (response.message.isNotEmpty) {
     stdout.writeln("\n${response.message}");
   }
-  return true;
+  return 0;
 }

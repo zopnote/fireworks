@@ -19,14 +19,7 @@ import 'dart:io';
 
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
-import 'package:fireworks.cli/command/runner.dart';
 import 'package:path/path.dart' as path;
-
-BuildConfig config(BuildType buildType, System target) {
-  return BuildConfig("clang", buildType: buildType, target: target);
-}
-
-Future<int> main(List<String> args) async =>
 
 final List<BuildStep> processSteps = [
   BuildStep(
@@ -74,7 +67,7 @@ final List<BuildStep> processSteps = [
           [
             "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
             "-B ${env.workDirectoryPath}",
-            "-DCMAKE_INSTALL_PREFIX=${env.outputDirectoryPath}",
+            "-DCMAKE_INSTALL_PREFIX=${env.installDirectoryPath}",
             "-DCMAKE_BUILD_TYPE=" +
                 {
                   BuildType.debug: "Debug",
