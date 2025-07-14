@@ -17,6 +17,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'process.dart';
 import 'package:path/path.dart' as path;
@@ -67,6 +68,24 @@ final class System {
   final SystemPlatform platform;
   final SystemProcessor processor;
   System(this.platform, this.processor);
+  static System? parseString(String string) {
+    SystemPlatform? platform = null;
+    SystemProcessor? processor = null;
+
+    for (SystemPlatform systemValue in SystemPlatform.values) {
+      if (systemValue.name == string.split("_").first) {
+        platform = systemValue;
+      }
+    }
+    for (SystemProcessor processorValue in SystemProcessor.values) {
+      if (processorValue.name == string.split("_").sublist(1).join("_")) {
+        processor = processorValue;
+      }
+    }
+    if (platform == null || processor == null) return null;
+    return System(platform, processor);
+  }
+
   factory System.current() {
     final String system = Platform.version.split("\"")[1];
     return System(
@@ -129,8 +148,7 @@ class BuildConfig {
   /**
    * Bare output directory of the project binaries.
    */
-  String get outputDirectoryPath => path.join(
-    rootDirectoryPath, "out");
+  String get outputDirectoryPath => path.join(rootDirectoryPath, "out");
 
   /**
    * Root of the repository the dart scripts got executed.
@@ -146,17 +164,15 @@ class BuildConfig {
   }
 
   String get installDirectoryPath => path.joinAll(
-    [outputDirectoryPath, "${this.name}-${target.string()}-${buildType.name}"] +
+    [outputDirectoryPath] + [this.target.string(), this.buildType.name] +
         this._installPath,
   );
 
   /**
    * Temporal directory for files.
    */
-  String get workDirectoryPath => path.join(
-    outputDirectoryPath,
-    ".build-files", this.target.string()
-  );
+  String get workDirectoryPath =>
+      path.join(outputDirectoryPath, this.target.string(), this.name);
 
   /**
    * Directory of the script run in this isolate.
@@ -218,13 +234,19 @@ class BuildConfig {
       path.join(this.installDirectoryPath, "${this.name}_build.json"),
     ).writeAsStringSync(jsonEncode(toJson()));
 
+
     bool result;
-    for (int i = 0; i < steps.length - 1; i++) {
-      result = await steps[i].execute(
-        env: this,
-        message: "[${i + 1}/${steps.length}] ",
-      );
-      if (!result) {
+    for (int i = 0; i < steps.length; i++) {
+      try {
+        result = await steps[i].execute(
+          env: this,
+          message: "⟮${i + 1}⁄${steps.length}⟯ ",
+        );
+      } catch (e) {
+        stderr.writeln("\nError while executing step '${steps[i].name}' (${i + 1} out of ${steps.length}).");
+        rethrow;
+      }
+      if (!result && steps[i].exitFail) {
         return false;
       }
     }
@@ -262,15 +284,15 @@ class BuildConfig {
           found = true;
         }
       }
-      final int space = 20 - program.length;
 
       if (found) {
-        stdout.writeln("$program" + (" " * space) + "FOUND");
+        stdout.write("$program" + " ✔  ");
       } else {
-        stderr.writeln("$program" + (" " * space) + "NOT FOUND");
+        stderr.write("$program" + " ✖  ");
         isAllFound = false;
       }
     }
+    stdout.writeln("");
     return isAllFound;
   }
 }

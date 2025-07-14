@@ -18,6 +18,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart' as path;
+
 import 'config.dart';
 
 final class BuildStepCommand {
@@ -27,17 +29,21 @@ final class BuildStepCommand {
   /// Should the parent environment variables be added to the access of the command.
   final bool includeParentEnvironment = true;
 
-  /// Should the command be run inside the systems command shell.
-  final bool shell;
-
   /// On windows the command will be executed as powershell administrator,
   /// on linux and macOS a sudo will be added.
   final bool administrator;
+
+  final String? workingDirectoryPath;
+
+
+  /// Should run the command in an external shell.
+  final bool shell;
 
   const BuildStepCommand({
     required this.program,
     required this.arguments,
     this.shell = false,
+    this.workingDirectoryPath,
     this.administrator = false,
   });
 
@@ -53,20 +59,21 @@ class BuildStep {
   final String name;
 
   /// Function that will run.
-  final Future<bool> Function(BuildConfig environment)? run;
+  final FutureOr<bool> Function(BuildConfig environment)? run;
 
   final BuildStepCommand Function(BuildConfig environment)? command;
 
   /// If a false value received by run() or the command should terminate the [BuildProcess]
   final bool exitFail;
 
-  final bool Function(BuildConfig environment)? condition;
+  final FutureOr<bool> Function(BuildConfig environment)? condition;
 
   /// If the process should get a spinner.
   /// Notice that any input to stdout or stderr will move the spinner to the last line.
   /// Therefore stop the spinner before any result information have to printed
   /// or another step will be executed.
   final bool spinner;
+
 
   const BuildStep(
     this.name, {
@@ -90,7 +97,7 @@ class BuildStep {
         spinner.stop(message + name);
         return returnable;
       }
-      return true;
+      return returnable;
     }
 
     if (this.spinner) {
@@ -99,7 +106,9 @@ class BuildStep {
       stdout.writeln(message + name);
     }
     if (condition != null) {
-      if (!condition!(env)) {
+      if (!await condition!(env)) {
+        stdout.write("\r");
+        stdout.write(message + name + " (Skipped)");
         return exitExecute(true);
       }
     }
@@ -108,12 +117,7 @@ class BuildStep {
     }
 
     if (this.command == null) {
-      throw Exception(
-        "You have to decide between a function call that should "
-        "be run as the steps purpose or the combination of an argument array "
-        "and the program the arguments will be applied to."
-        "But you didn't specified a function or the program, argument couple.",
-      );
+      return exitExecute(true);
     }
 
     final BuildStepCommand command = this.command!(env);
@@ -124,12 +128,27 @@ class BuildStep {
         : command.program;
 
     final List<String> arguments;
+    final String doneFilePath = path.join(
+      command.workingDirectoryPath ?? env.workDirectoryPath,
+      ".dart-process-done",
+    );
     if (command.administrator && Platform.isWindows) {
       arguments = [
         "-Command",
         """
-        Set-Location -Path ${env.workDirectoryPath};
-        Start-Process -FilePath ${command.string} -Verb RunAs
+        # Set variables
+        \$targetFolder = "${command.workingDirectoryPath ?? env.workDirectoryPath}"
+        \$command = "${command.program}"
+        \$arguments = "${command.arguments.join(" ")}"
+        
+        # Relaunch as administrator
+        Start-Process powershell -Verb runAs -wait -ArgumentList @(
+            "-NoProfile",
+            "-ExecutionPolicy Bypass",
+            "-Command `"Set-Location -Path '\$targetFolder'; & '\$command' \$arguments`""
+        )
+        
+        New-Item -ItemType File -Path "$doneFilePath"
         """,
       ];
     } else {
@@ -148,12 +167,16 @@ class BuildStep {
     final result = await Process.start(
       program,
       arguments,
-      workingDirectory: env.workDirectoryPath,
+      workingDirectory: command.workingDirectoryPath ?? env.workDirectoryPath,
       environment: processableEnvironment,
       includeParentEnvironment: true,
       mode: ProcessStartMode.normal,
       runInShell: command.shell,
     );
+    if (command.administrator)
+      await waitWhile(() {
+        return File(doneFilePath).existsSync();
+      }, Duration(seconds: 1));
 
     if (!this.spinner) {
       void Function(String) writeln = (data) {
@@ -197,7 +220,20 @@ class ProcessSpinner {
   void stop([String message = ""]) {
     _timer?.cancel();
     stdout.write('\r');
-    stdout.write(message);
-    stdout.write('\r');
+    stdout.write(message + "\n");
   }
+}
+
+Future waitWhile(bool test(), [Duration pollInterval = Duration.zero]) {
+  var completer = new Completer();
+  check() {
+    if (!test()) {
+      completer.complete();
+    } else {
+      new Timer(pollInterval, check);
+    }
+  }
+
+  check();
+  return completer.future;
 }

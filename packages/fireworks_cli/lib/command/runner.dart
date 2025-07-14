@@ -68,17 +68,15 @@ final class Command {
   final List<Command> subCommands;
   final CommandRunner run;
 }
+
 typedef CommandRunner = FutureOr<CommandResponse> Function(_RunData data);
+
 final class _RunData {
   final Command cmd;
   final String arg;
   final List<Flag> flags;
 
-  _RunData({
-    required this.cmd,
-    required this.arg,
-    required this.flags,
-  });
+  _RunData({required this.cmd, required this.arg, required this.flags});
 }
 
 /**
@@ -126,7 +124,8 @@ String syntax(Command cmd) {
  * subcommands or flags to it. At the end one [Command].run() function is
  * determined and will be executed.
  */
-Future<int> execute(List<String> args,
+Future<int> execute(
+  List<String> args,
   Command command, {
   List<Flag> globalFlags = const [],
 }) async {
@@ -150,21 +149,27 @@ Future<int> execute(List<String> args,
   }
 
   final List<Flag> flags = [];
-  for (String flagArg in args.where(
-    (arg) => arg.startsWith("--"),
-  )) {
+  for (String flagArg in args.where((arg) => arg.startsWith("--"))) {
     Flag flag = Flag(
       name: flagArg.contains("=")
           ? flagArg.split("=").first.substring(2)
           : flagArg.substring(2),
       value: flagArg.contains("=") ? flagArg.split("=").last : "",
     );
+
     if ((current.flags.map((e) => e.name).toList()
           ..addAll(globalFlags.map((e) => e.name)))
         .contains(flag.name)) {
       flags.add(flag);
     } else {
       stdout.writeln("${flag.name} is ignored in this context.");
+    }
+  }
+
+  for (Flag flag in []..addAll(globalFlags)..addAll(current.flags)) {
+    if (flag.value == "") continue;
+    if (!flags.map((e) => e.name).contains(flag.name)) {
+      flags.add(flag);
     }
   }
 
@@ -190,4 +195,13 @@ Future<int> execute(List<String> args,
     stdout.writeln("\n${response.message}");
   }
   return 0;
+}
+
+extension IterableExtensions<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
 }
