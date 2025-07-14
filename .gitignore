@@ -6,3 +6,13 @@
 /packages/app/.dart_tool/
 /packages/app/pubspec.lock
 
+/.idea/dictionaries/
+/.idea/libraries/
+/.idea/.gitignore
+/.idea/editor.xml
+/.idea/fireworks.iml
+/.idea/jsonSchemas.xml
+/.idea/modules.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
+/.idea/codeStyles/
