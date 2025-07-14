@@ -59,8 +59,14 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "CMake configuration",
-    condition: (env) =>
-        !Directory("${env.workDirectoryPath}/CMakeFiles").existsSync(),
+    condition: (env) {
+      env.variables["cmake_build_type"] = {
+        BuildType.debug: "Debug",
+        BuildType.release: "MinSizeRel",
+        BuildType.releaseDebug: "RelWithDebInfo",
+      }[env.buildType]!;
+      return true;
+    },
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments:
@@ -68,12 +74,7 @@ final List<BuildStep> processSteps = [
             "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
             "-B ${env.workDirectoryPath}",
             "-DCMAKE_INSTALL_PREFIX=${env.installDirectoryPath}",
-            "-DCMAKE_BUILD_TYPE=" +
-                {
-                  BuildType.debug: "Debug",
-                  BuildType.release: "Release",
-                  BuildType.releaseDebug: "RelWithDebInfo",
-                }[env.buildType]!,
+            "-DCMAKE_BUILD_TYPE=" + env.variables["cmake_build_type"],
             "-DLLVM_BUILD_TOOLS=OFF",
             "-DLLVM_INCLUDE_BENCHMARKS=OFF",
             "-DLLVM_INCLUDE_TESTS=OFF",
@@ -100,11 +101,7 @@ final List<BuildStep> processSteps = [
         "--build",
         env.workDirectoryPath,
         "--config",
-        {
-          BuildType.debug: "Debug",
-          BuildType.release: "MinSizeRel",
-          BuildType.releaseDebug: "RelWithDebInfo",
-        }[env.buildType]!,
+        env.variables["cmake_build_type"],
       ],
     ),
   ),
@@ -116,11 +113,7 @@ final List<BuildStep> processSteps = [
         "--install",
         env.workDirectoryPath,
         "--config",
-        {
-          BuildType.debug: "Debug",
-          BuildType.release: "MinSizeRel",
-          BuildType.releaseDebug: "RelWithDebInfo",
-        }[env.buildType]!,
+        env.variables["cmake_build_type"],
       ],
     ),
   ),

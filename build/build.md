@@ -2,10 +2,11 @@
 Fireworks development environment is not supported on every platform because of the support flutter and dart has. 
 ## Base prerequisites
 * [CMake](https://cmake.org/download/) with version 3.20 or higher
+* [Dart](https://dart.dev/get-dart) version 3.8.0 or higher
 
 # Windows
-## x86 target
-> Host is a Windows x86 or x64/amd64 machine
+## x86 (x86_64) target
+> Host is a Windows x86, x64, amd64 machine
 
 All targets are **available for this platform**.
 
@@ -16,16 +17,13 @@ Click  [here](https://visualstudio.microsoft.com/de/downloads/) to get the Micro
 * MSVC v143 VS 2022 C++ x64/x86 buildtools (newest)
 * Windows 11-SDK (recommend v10.0.26100.0) from the Visual Studio installer
 * Flutter SDK (recommend v3.29.1) ([here](https://docs.flutter.dev/release/archive))
-* Go language binaries for Windows amd64 ([here](https://go.dev/dl/))
-
-If you have problems with bgfx see its prerequisites [here](https://bkaradzic.github.io/bgfx/build.html). 
 
 ````shell
-cmake -S . --preset win-x86_64 --DCMAKE_BUILD_TYPE=Debug
+dart run build.dart sdk --platform=windows_x86_64 --config=release
 ````
 
-## ARM64 target
-> Host is a Windows x86 or x64/amd64 machine
+## ARM64 (arm64) target
+> Host is a Windows x86, x64, amd64 machine
 
 All targets are **available for this platform**.
 
