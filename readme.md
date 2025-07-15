@@ -3,12 +3,9 @@
 **Fireworks** is a sdk and framework developed for the creation 
 of 3d graphic programs such as games and simulations.
 
-It is inspired by Flutter and focuses to provide a pleasant developer experience just as good.
+It tries to provide a developer experience just as pleasant as Flutter does.
 With Fireworks, you can create games and other 3d real-time applications for desktop and mobile.
 The sdk is available for desktop.
-
-Just like the most engines, Fireworks is free of charge as long you are non-commercial. 
-Otherwise, you have to get a commercial license that forces you to pay 5% of your revenue once it exceeds 10 000$.
 
 # Overview of engine runtime steps
 1. Create the core systems, entry point and application layer as well as launch the first window.
