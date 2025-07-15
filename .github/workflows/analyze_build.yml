@@ -2,7 +2,7 @@ name: Static analyzation of build scripts
 on:
   push:
     paths:
-      - build
+      - build/**.dart
 jobs:
   analyze_app:
     runs-on: ubuntu-latest
