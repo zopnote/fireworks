@@ -1,4 +1,4 @@
-name: Static analyzation of Fireworks
+name: Static analyzation of cmdline app
 on:
   push:
     paths:
