@@ -15,4 +15,7 @@ jobs:
         with:
           sdk: 'stable'
 
-      - run: dart analyze build
+      - run: dart pub get
+        working-directory: build
+      - run: dart analyze
+        working-directory: build
