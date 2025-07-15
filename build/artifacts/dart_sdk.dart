@@ -64,21 +64,49 @@ List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Build the sdk for the target operating system",
+    condition: (env) {
+      env.variables["dart_arch"] = {
+        SystemProcessor.x86_64: "x64",
+        SystemProcessor.arm64: "arm64",
+        SystemProcessor.arm: "arm",
+        SystemProcessor.riscv64: "riscv64",
+        SystemProcessor.x86: "ia32",
+      }[env.target.processor]!;
+      return !Directory(
+        path.join(
+          env.workDirectoryPath,
+          "sdk",
+          "out",
+          "Release" + (env.variables["dart_arch"] as String).toUpperCase(),
+        ),
+      ).existsSync();
+    },
     command: (env) => BuildStepCommand(
-        program: "python",
+      program: "python",
+      arguments: [
+        "${path.join(env.workDirectoryPath, "sdk")}/tools/build.py",
+        "--mode",
+        "release",
+        "--arch",
+        env.variables["dart_arch"],
+        "create_sdk",
+      ],
+      workingDirectoryPath: path.join(env.workDirectoryPath, "sdk"),
+    ),
+  ),
+  BuildStep("Build android gen_snapshot",
+    command: (env) {
+      return BuildStepCommand(
+          program: "python",
         arguments: [
           "${path.join(env.workDirectoryPath, "sdk")}/tools/build.py",
-          "--mode", "release",
-          "--arch", {
-          SystemProcessor.x86_64: "x64",
-            SystemProcessor.arm64: "arm64",
-            SystemProcessor.arm: "arm",
-            SystemProcessor.riscv64: "riscv64",
-            SystemProcessor.x86: "ia32"
-          }[env.target.processor]!,
-          "create_sdk"
+          "--mode",
+          "product",
+          "-arch",
+          "simarm64",
+          "copy_gen_snapshot",
         ],
-      workingDirectoryPath: path.join(env.workDirectoryPath, "sdk"),
-    )
-  ),
+      );
+    }
+  )
 ];

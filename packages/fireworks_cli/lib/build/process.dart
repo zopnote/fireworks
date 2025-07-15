@@ -107,8 +107,6 @@ class BuildStep {
     }
     if (condition != null) {
       if (!await condition!(env)) {
-        stdout.write("\r");
-        stdout.write(message + name + " (Skipped)");
         return exitExecute(true);
       }
     }
