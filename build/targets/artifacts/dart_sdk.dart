@@ -102,7 +102,7 @@ List<BuildStep> processSteps = [
       return !Directory(path.join(env.installDirectoryPath, "bin")).existsSync();
     },
     run: (env) {
-
+      return true;
     }
   ),
   BuildStep(
