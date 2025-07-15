@@ -18,14 +18,9 @@
 import 'dart:io';
 
 import 'package:fireworks.cli/build/config.dart';
-import 'package:fireworks.cli/build/process.dart';
 import 'package:fireworks.cli/command/runner.dart';
 
-import 'targets/artifacts/clang.dart' as clang;
-import 'targets/artifacts/dart_sdk.dart' as dart_sdk;
-import 'targets/sdk.dart' as sdk;
-
-
+import 'package:fireworks.build/targets.dart';
 
 Future<int> main(List<String> args) => execute(
   args,
@@ -54,13 +49,6 @@ Future<int> main(List<String> args) => execute(
     Flag(name: "list", description: "List all build targets."),
   ],
 );
-
-/// All registered build targets
-final Map<String, List<BuildStep>> targets = {
-  "sdk": sdk.processSteps,
-  "clang": clang.processSteps,
-  "dart_sdk": dart_sdk.processSteps
-};
 
 /// Host target couples supported by the build scripts for building fireworks.
 final supportedCouples = {
@@ -167,7 +155,7 @@ CommandRunner build = (data) async {
       data.arg,
       target: target,
       buildType: buildType,
-      variables: {"build_version": 1.0}
+      variables: {"build_version": 1.0},
     ).execute(targets[data.arg]!),
   );
 };

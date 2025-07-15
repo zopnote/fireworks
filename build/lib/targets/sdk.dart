@@ -1,7 +1,6 @@
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
-
-import '../build.dart';
+import '../targets.dart';
 
 final List<BuildStep> processSteps = [
   BuildStep(

@@ -19,16 +19,16 @@ created to generically represents a step of compilation or processing.
 
 List all build targets with:
 ````bash
-./build --list
+dart run bin/build.dart --list
 ````
 
 Build a target with:
 ````bash 
-./build <target>
+dart run bin/build.dart <target>
 ````
 Add some spice:
 ````bash 
-./build <target> --platform=windows_arm64 --config=release --verbose
+dart run bin/build.dart <target> --platform=windows_arm64 --config=release --verbose
 ````
 ## The build scripts
 If you want more than just build the SDK and let it run, you need some insights. The build system to build Fireworks is based on the same
