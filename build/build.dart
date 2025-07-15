@@ -17,12 +17,13 @@
 
 import 'dart:io';
 
-import 'targets/sdk.dart' as sdk;
-import 'targets/artifacts/clang.dart' as clang;
-import 'targets/artifacts/dart_sdk.dart' as dart_sdk;
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
 import 'package:fireworks.cli/command/runner.dart';
+
+import 'targets/artifacts/clang.dart' as clang;
+import 'targets/artifacts/dart_sdk.dart' as dart_sdk;
+import 'targets/sdk.dart' as sdk;
 
 
 

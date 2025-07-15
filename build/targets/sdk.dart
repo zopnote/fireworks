@@ -1,6 +1,5 @@
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
-import 'package:fireworks.cli/command/runner.dart';
 
 import '../build.dart';
 
