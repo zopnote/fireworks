@@ -31,7 +31,7 @@ Future<int> main(List<String> args) => execute(
   args,
   Command(
     use: "build",
-    description: "\ndart run build.dart <target>",
+    description: "\nPlease specify a target to build.",
     run: build,
   ),
   globalFlags: [
