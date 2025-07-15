@@ -148,7 +148,8 @@ class BuildConfig {
   /**
    * Bare output directory of the project binaries.
    */
-  String get outputDirectoryPath => path.join(rootDirectoryPath, "build", "out");
+  String get outputDirectoryPath =>
+      path.join(rootDirectoryPath, "build", "out");
 
   /**
    * Root of the repository the dart scripts got executed.
@@ -173,7 +174,7 @@ class BuildConfig {
    * Temporal directory for files.
    */
   String get workDirectoryPath =>
-      path.join(outputDirectoryPath, this.target.string(), this.name);
+      path.join(outputDirectoryPath, this.target.string(), ".${this.name}_build_data");
 
   /**
    * Directory of the script run in this isolate.
@@ -194,16 +195,14 @@ class BuildConfig {
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> toJsonMap(Map<String, dynamic> map) {
-      final Map<String, dynamic> jsonMap = {
-        "host": host.string(),
-        "target": this.target.string(),
-        "install_path": this._installPath.join("/"),
-      };
+      final Map<String, dynamic> jsonMap = {};
       map.forEach((key, val) {
         if (val is String) {
           jsonMap[key] = val;
-        } else if (val is num || val is List<String>) {
+        } else if (val is num) {
           jsonMap[key] = val;
+        } else if (val is List<String>) {
+          jsonMap[key] = val.join(" ");
         } else if (val is SystemPlatform) {
           jsonMap[key] = val.name;
         } else if (val is SystemProcessor) {
@@ -232,6 +231,46 @@ class BuildConfig {
     }
 
     bool result;
+    final File processFile = File(
+      path.join(this.workDirectoryPath, "../", ".${this.name}_build.steps"),
+    );
+    final String Function(String) format = (str) {
+      return str
+          .replaceAll(",", ",\n  ")
+          .replaceAll("{", "\n  ")
+          .replaceAll("}", "\n")
+          .replaceAll(":", ": ");
+    };
+
+    final int bars = 80;
+    final int dots = 10;
+
+    final void Function(Map<String, dynamic>) addStep = (map) {
+      processFile.writeAsStringSync(
+        "\n${format(jsonEncode(map))}\n${".." * dots}",
+        mode: FileMode.append,
+      );
+    };
+
+    processFile.writeAsStringSync(
+      "${"-" * bars}\n${" " * 26}ENVIRONMENT CONSTANTS\n" +
+          format(
+            jsonEncode({
+              "name": this.name,
+              "host": this.host.string(),
+              "target": this.target.string(),
+              "build_type": this.buildType.name,
+              "work_directory": this.workDirectoryPath,
+              "output_directory": this.outputDirectoryPath,
+              "script_directory": this.scriptDirectoryPath,
+              "install_directory": this.installDirectoryPath,
+              "install_path": this._installPath.join("/"),
+              "root_directory": this.rootDirectoryPath,
+            }),
+          ) +
+          "\n\n${"-" * bars}\n${" " * 26}STEPS EXECUTION\n\n${"." * dots * 2}",
+    );
+
     for (int i = 0; i < steps.length; i++) {
       try {
         result = await steps[i].execute(
@@ -243,17 +282,21 @@ class BuildConfig {
           "\nError while executing step '${steps[i].name}' (${i + 1} out of ${steps.length}).",
         );
         rethrow;
-      } finally {
-        File(
-          path.join(this.installDirectoryPath, "${this.name}_build.json"),
-        ).writeAsStringSync(
-          jsonEncode(toJson())
-              .replaceAll(",", ",\n  ")
-              .replaceAll("{", "{\n  ")
-              .replaceAll("}", "\n}")
-              .replaceAll(":", ": "),
-        );
       }
+      addStep(
+        <String, dynamic>{
+          "index": "${i + 1} of ${steps.length}",
+          "result": result,
+          "description": steps[i].name,
+          "wasCritical": steps[i].exitFail && !result,
+          if (steps[i].command != null)
+            "command":
+                steps[i].command!(this).program +
+                " " +
+                steps[i].command!(this).arguments.join(" "),
+        }..addAll(toJson()),
+      );
+
       if (!result && steps[i].exitFail) {
         return false;
       }
