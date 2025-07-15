@@ -148,7 +148,7 @@ class BuildConfig {
   /**
    * Bare output directory of the project binaries.
    */
-  String get outputDirectoryPath => path.join(rootDirectoryPath, "out");
+  String get outputDirectoryPath => path.join(rootDirectoryPath, "build", "out");
 
   /**
    * Root of the repository the dart scripts got executed.
@@ -164,7 +164,8 @@ class BuildConfig {
   }
 
   String get installDirectoryPath => path.joinAll(
-    [outputDirectoryPath] + [this.target.string(), this.buildType.name] +
+    [outputDirectoryPath] +
+        [this.target.string(), this.buildType.name] +
         this._installPath,
   );
 
@@ -189,7 +190,7 @@ class BuildConfig {
     final Map<String, dynamic>? variables,
   }) : _installPath = installPath,
        this.target = target ?? System.current(),
-       this.variables = variables ?? {};
+       this.variables = variables != null ? ({}..addAll(variables)) : {};
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> toJsonMap(Map<String, dynamic> map) {
@@ -230,11 +231,6 @@ class BuildConfig {
       Directory(this.workDirectoryPath).createSync(recursive: true);
     }
 
-    File(
-      path.join(this.installDirectoryPath, "${this.name}_build.json"),
-    ).writeAsStringSync(jsonEncode(toJson()));
-
-
     bool result;
     for (int i = 0; i < steps.length; i++) {
       try {
@@ -243,8 +239,20 @@ class BuildConfig {
           message: "⟮${i + 1}⁄${steps.length}⟯ ",
         );
       } catch (e) {
-        stderr.writeln("\nError while executing step '${steps[i].name}' (${i + 1} out of ${steps.length}).");
+        stderr.writeln(
+          "\nError while executing step '${steps[i].name}' (${i + 1} out of ${steps.length}).",
+        );
         rethrow;
+      } finally {
+        File(
+          path.join(this.installDirectoryPath, "${this.name}_build.json"),
+        ).writeAsStringSync(
+          jsonEncode(toJson())
+              .replaceAll(",", ",\n  ")
+              .replaceAll("{", "{\n  ")
+              .replaceAll("}", "\n}")
+              .replaceAll(":", ": "),
+        );
       }
       if (!result && steps[i].exitFail) {
         return false;

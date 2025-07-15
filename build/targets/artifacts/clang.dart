@@ -60,12 +60,10 @@ final List<BuildStep> processSteps = [
   BuildStep(
     "CMake configuration",
     condition: (env) {
-      env.variables["cmake_build_type"] = {
-        BuildType.debug: "Debug",
-        BuildType.release: "MinSizeRel",
-        BuildType.releaseDebug: "RelWithDebInfo",
-      }[env.buildType]!;
-      return true;
+      env.variables["cmake_build_type"] = "MinSizeRel";
+      return !File(
+        path.join(env.workDirectoryPath, "CMakeCache.txt"),
+      ).existsSync();
     },
     command: (env) => BuildStepCommand(
       program: "cmake",
@@ -74,6 +72,7 @@ final List<BuildStep> processSteps = [
             "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
             "-B ${env.workDirectoryPath}",
             "-DCMAKE_INSTALL_PREFIX=${env.installDirectoryPath}",
+            "-DCMAKE_INSTALL_BINDIR=${env.installDirectoryPath}",
             "-DCMAKE_BUILD_TYPE=" + env.variables["cmake_build_type"],
             "-DLLVM_BUILD_TOOLS=OFF",
             "-DLLVM_INCLUDE_BENCHMARKS=OFF",
@@ -95,6 +94,17 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Build project files",
+    condition: (env) {
+      return !File(
+        path.join(
+          env.workDirectoryPath,
+          env.variables["cmake_build_type"],
+          "bin",
+          "clang" +
+              (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
+        ),
+      ).existsSync();
+    },
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments: [
@@ -107,6 +117,15 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Install project binaries",
+    condition: (env) {
+      return !File(
+        path.join(
+          env.installDirectoryPath,
+          "clang" +
+              (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
+        ),
+      ).existsSync();
+    },
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments: [
@@ -116,5 +135,38 @@ final List<BuildStep> processSteps = [
         env.variables["cmake_build_type"],
       ],
     ),
+  ),
+  BuildStep(
+    "Remove unnecessary binaries",
+    run: (env) {
+      final List<String> deletable = [
+        "bin",
+        "lib",
+        "include",
+        "libexec",
+        "share",
+        "amdgpu-arch",
+        "c-index-test",
+        "diagtool",
+        "LTO",
+        "Remarks",
+        "nvptx-arch",
+        "git-clang-format",
+        "git-clang-format.bat",
+        "intercept-build",
+        "scan-build",
+        "scan-build.bat",
+        "scan-build-py",
+        "scan-view",
+      ];
+
+      final directory = Directory(env.installDirectoryPath);
+      for (FileSystemEntity entity in directory.listSync()) {
+        if (deletable.contains(path.basenameWithoutExtension(entity.path))) {
+          entity.deleteSync(recursive: true);
+        }
+      }
+      return true;
+    },
   ),
 ];

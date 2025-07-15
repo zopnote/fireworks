@@ -17,11 +17,13 @@
 
 import 'dart:io';
 
-import 'artifacts/clang.dart' as clang;
-import 'artifacts/dart_sdk.dart' as dart_sdk;
+import 'targets/sdk.dart' as sdk;
+import 'targets/artifacts/clang.dart' as clang;
+import 'targets/artifacts/dart_sdk.dart' as dart_sdk;
 import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/build/process.dart';
 import 'package:fireworks.cli/command/runner.dart';
+
 
 
 Future<int> main(List<String> args) => execute(
@@ -54,6 +56,7 @@ Future<int> main(List<String> args) => execute(
 
 /// All registered build targets
 final Map<String, List<BuildStep>> targets = {
+  "sdk": sdk.processSteps,
   "clang": clang.processSteps,
   "dart_sdk": dart_sdk.processSteps
 };

@@ -72,21 +72,24 @@ List<BuildStep> processSteps = [
         SystemProcessor.riscv64: "riscv64",
         SystemProcessor.x86: "ia32",
       }[env.target.processor]!;
+      env.variables["dart_out_path"] = path.join(
+        env.workDirectoryPath,
+        "sdk",
+        "out",
+        "Release" + (env.variables["dart_arch"] as String).toUpperCase(),
+      );
       return !Directory(
-        path.join(
-          env.workDirectoryPath,
-          "sdk",
-          "out",
-          "Release" + (env.variables["dart_arch"] as String).toUpperCase(),
-        ),
+        env.variables["dart_out_path"]
       ).existsSync();
     },
     command: (env) => BuildStepCommand(
-      program: "python",
+      program: env.host.platform == SystemPlatform.windows
+          ? path.join(env.variables["repository_path"], "python3.bat")
+          : "python",
       arguments: [
         "${path.join(env.workDirectoryPath, "sdk")}/tools/build.py",
         "--mode",
-        "release",
+        "product",
         "--arch",
         env.variables["dart_arch"],
         "create_sdk",
@@ -94,19 +97,32 @@ List<BuildStep> processSteps = [
       workingDirectoryPath: path.join(env.workDirectoryPath, "sdk"),
     ),
   ),
-  BuildStep("Build android gen_snapshot",
+  BuildStep("Install platform sdk",
+    condition: (env) async {
+      return !Directory(path.join(env.installDirectoryPath, "bin")).existsSync();
+    },
+    run: (env) {
+
+    }
+  ),
+  BuildStep(
+    "Build arm64 cross compilation gen snapshot tool",
     command: (env) {
       return BuildStepCommand(
-          program: "python",
+        program: env.host.platform == SystemPlatform.windows
+            ? path.join(env.variables["repository_path"], "python3.bat")
+            : "python",
         arguments: [
-          "${path.join(env.workDirectoryPath, "sdk")}/tools/build.py",
+          path.join(".", "tools", "build.py"),
+          "--arch",
+          "simarm64",
           "--mode",
           "product",
-          "-arch",
-          "simarm64",
           "copy_gen_snapshot",
         ],
+        workingDirectoryPath: path.join(env.workDirectoryPath, "sdk"),
       );
-    }
-  )
+    },
+  ),
+
 ];
