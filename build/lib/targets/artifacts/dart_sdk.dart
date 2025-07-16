@@ -24,7 +24,7 @@ import 'package:path/path.dart' as path;
 List<BuildStep> processSteps = [
   BuildStep(
     "Ensures programs in environment",
-    condition: (env) => BuildConfig.ensurePrograms(["python", "git"]),
+    condition: (env) => ensurePrograms(["python", "git"]),
   ),
   BuildStep(
     "Set system variable",
@@ -120,67 +120,82 @@ List<BuildStep> processSteps = [
       path.join(env.installDirectoryPath, "bin", "utils"),
     ).existsSync(),
     run: (env) {
-      final List<String> installable = [
-        "dart",
-        "dartaotruntime",
-        "utils",
-        "snapshot",
-        "lib",
-        "sdk_packages",
-        "version",
-        "revision",
-        "LICENSE",
-      ];
-      for (FileSystemEntity entity in Directory(
-        path.join(env.variables["dart_binaries_path"], "dart-sdk"),
-      ).listSync(recursive: true)) {
-        if (!installable.contains(path.basenameWithoutExtension(entity.path))) {
-          continue;
-        }
-        if (!(entity is File)) continue;
-        Directory(path.dirname(entity.path)).createSync(recursive: true);
-        entity.copySync(
-          path.join(
-            env.installDirectoryPath,
-            path.dirname(
-              path.relative(
-                entity.path,
-                from: path.join(
-                  env.variables["dart_binaries_path"],
-                  "dart-sdk",
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-      for (FileSystemEntity entity in Directory(
-        path.join(env.variables["dart_binaries_path"], "dart-sdk", "bin"),
-      ).listSync(recursive: true)) {
-        if (entity is File) {
-          if (!installable.contains(
-            path.basenameWithoutExtension(entity.path),
-          )) {
-            continue;
-          }
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        relativePath: ["bin"],
+        fileNames: ["dart", "dartaotruntime"],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        relativePath: ["bin", "utils"],
+        fileNames: ["gen_snapshot"],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        relativePath: ["lib", "_internal"],
+        directoryNames: ["vm", "vm_shared", "sdk_library_metadata"],
+        fileNames: [
+          "ddc_outline",
+          "ddc_platform",
+          "fix_data",
+          "vm_platform",
+          "vm_platform_product",
+          "vm_platform_strong",
+          "allowed_experiments",
+        ],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        relativePath: ["lib"],
+        directoryNames: [
+          "_http",
+          "async",
+          "collection",
+          "concurrent",
+          "convert",
+          "core",
+          "developer",
+          "ffi",
+          "internal",
+          "io",
+          "isolate",
+          "math",
+          "typed_data",
+        ],
+        fileNames: ["api_readme.md", "libraries.json"],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        relativePath: ["bin", "snapshots"],
+        fileNames: [
+          "analysis_server_aot.dart",
+          "dartdev.dart",
+          "gen_kernel_aot.dart",
+          "kernel_worker_aot.dart",
+          "kernel-service.dart",
+        ],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!],
+        fileNames: [
+          "gen_snapshot_product_linux_x64",
+          "gen_snapshot_product_linux_arm64",
+          "gen_snapshot_product_linux_riscv64",
+        ],
+        excludeEndings: [".lib"],
+      );
+      install(
+        installPath: [env.installDirectoryPath],
+        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+        fileNames: ["version", "LICENSE"],
+      );
 
-          Directory(path.dirname(entity.path)).createSync(recursive: true);
-          entity.copySync(
-            path.join(
-              env.installDirectoryPath,
-              path.dirname(
-                path.relative(
-                  entity.path,
-                  from: path.join(
-                    env.variables["dart_binaries_path"],
-                    "dart-sdk",
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-      }
       return true;
     },
   ),
@@ -191,7 +206,10 @@ List<BuildStep> processSteps = [
         env.workDirectoryPath,
         "sdk",
         "out",
-        "ReleaseSIMARM64",
+        "ProductSIMARM64",
+        "dart-sdk",
+        "bin",
+        "utils",
       );
       return !Directory(env.variables["snap_out_path"]).existsSync();
     },
@@ -215,31 +233,33 @@ List<BuildStep> processSteps = [
   BuildStep(
     "Install simarm64 cross compilation gen snapshot tool",
     condition: (env) {
-      env.variables["simarm64_snapshot_name"] = "simarm64_gen_snapshot";
-      bool found = true;
-      Directory(env.installDirectoryPath).listSync().forEach((e) {
-        if (path.basenameWithoutExtension(e.path) ==
-            env.variables["simarm64_snapshot_name"]) {
-          found = false;
+      for (FileSystemEntity entity in Directory(
+        env.variables["snap_out_path"],
+      ).listSync()) {
+        if (!(entity is File)) {
+          continue;
         }
-      });
-      return found;
+        if (path.basenameWithoutExtension(entity.path) != "gen_snapshot") {
+          continue;
+        }
+        env.variables["simarm64_snapshot_path"] = path.join(
+          env.variables["snap_out_path"],
+          path.basename(entity.path),
+        );
+      }
+
+      return env.variables["simarm64_snapshot_path"] != null;
     },
     run: (env) {
       env.variables["executable_ending"] =
           (env.target.platform == SystemPlatform.windows ? ".exe" : "");
-      Directory(env.installDirectoryPath).listSync().forEach((e) {
-        if (path.basenameWithoutExtension(e.path) ==
-            env.variables["simarm64_snapshot_name"]) {
-          (e as File).copySync(
-            path.join(
-              env.installDirectoryPath,
-              env.variables["simarm64_snapshot_name"] +
-                  env.variables["executable_ending"],
-            ),
-          );
-        }
-      });
+      File(env.variables["simarm64_snapshot_path"]).copySync(
+        path.join(
+          env.installDirectoryPath,
+          "gen_snapshot_product_simarm64" + env.variables["executable_ending"],
+        ),
+      );
+
       return true;
     },
   ),

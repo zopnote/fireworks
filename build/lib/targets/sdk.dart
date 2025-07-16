@@ -25,14 +25,14 @@ final List<BuildStep> processSteps = [
     run: (env) async {
       bool result = await BuildConfig(
         "clang",
-        installPath: ["bin", "vendor"],
+        installPath: ["bin", "clang"],
         buildType: env.buildType,
         variables: env.variables,
         target: env.target
       ).execute(targets["clang"]!);
       result = result && await BuildConfig(
           "dart_sdk",
-          installPath: ["bin", "vendor"],
+          installPath: ["bin", "dart"],
           buildType: env.buildType,
           variables: env.variables,
           target: env.target

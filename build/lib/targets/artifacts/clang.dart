@@ -24,7 +24,7 @@ import 'package:path/path.dart' as path;
 final List<BuildStep> processSteps = [
   BuildStep(
     "Check for available programs",
-    condition: (_) => !BuildConfig.ensurePrograms(["git", "cmake", "python"]),
+    condition: (_) => !ensurePrograms(["git", "cmake", "python"]),
     run: (env) async {
       stderr.writeln(
         "\nPlease ensure the availability of all dependencies to proceed.",
@@ -99,6 +99,7 @@ final List<BuildStep> processSteps = [
         path.join(
           env.workDirectoryPath,
           env.variables["cmake_build_type"],
+          "bin",
           "clang" +
               (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
         ),
@@ -159,7 +160,7 @@ final List<BuildStep> processSteps = [
         "clang-offload-packager",
         "clang-offload-bundler",
         "clang"
-        "bin",
+            "bin",
         "lib",
         "include",
         "libexec",
@@ -180,6 +181,13 @@ final List<BuildStep> processSteps = [
       ];
 
       final directory = Directory(env.installDirectoryPath);
+      File(
+        path.join(
+          env.workDirectoryPath,
+          env.variables["repository_name"]!,
+          "LICENSE.TXT",
+        ),
+      ).copySync(path.join(env.installDirectoryPath, "LICENSE.TXT"));
       for (FileSystemEntity entity in directory.listSync()) {
         if (deletable.contains(path.basenameWithoutExtension(entity.path))) {
           entity.deleteSync(recursive: true);

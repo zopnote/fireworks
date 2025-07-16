@@ -173,8 +173,12 @@ class BuildConfig {
   /**
    * Temporal directory for files.
    */
-  String get workDirectoryPath =>
-      path.join(outputDirectoryPath, this.target.string(), "targets-build", this.name);
+  String get workDirectoryPath => path.join(
+    outputDirectoryPath,
+    this.target.string(),
+    "targets-build",
+    this.name,
+  );
 
   /**
    * Directory of the script run in this isolate.
@@ -303,47 +307,101 @@ class BuildConfig {
     }
     return true;
   }
+}
 
-  static bool ensurePrograms(List<String> requiredPrograms) {
-    final String executableExtension = Platform.isWindows ? ".exe" : "";
-    final List<String> pathVariableEntries =
-        Platform.environment["PATH"]?.split(Platform.isWindows ? ";" : ":") ??
-        [];
-
-    if (requiredPrograms.isEmpty) return true;
-
-    bool isAllFound = true;
-    for (String program in requiredPrograms) {
-      bool found = false;
-      for (String pathVariableEntry in pathVariableEntries) {
-        final File programFile = File(
-          path.join(pathVariableEntry, "$program$executableExtension"),
-        );
-        if (programFile.existsSync()) {
-          found = true;
-        }
+void install({
+  List<String> installPath = const [],
+  List<String> directoryNames = const [],
+  List<String> fileNames = const [],
+  List<String> rootDirectoryPath = const [],
+  List<String> excludeEndings = const [],
+  List<String> relativePath = const [],
+}) {
+  final Directory workDirectory = Directory(
+    path.joinAll(rootDirectoryPath + relativePath),
+  );
+  for (final entity in workDirectory.listSync()) {
+    if (entity is File) {
+      if (!fileNames.contains(path.basenameWithoutExtension(entity.path))) {
+        continue;
       }
-
-      if (!found) {
-        final result = Process.runSync(
-          program,
-          [],
-          runInShell: true,
-          includeParentEnvironment: true,
-        );
-        if (result.exitCode == 0) {
-          found = true;
-        }
+      if (excludeEndings.contains(path.extension(entity.path))) {
+        continue;
       }
-
-      if (found) {
-        stdout.write("$program" + " ✔  ");
-      } else {
-        stderr.write("$program" + " ✖  ");
-        isAllFound = false;
+      final String filePath = path.join(
+        path.joinAll(installPath),
+        path.joinAll(installPath),
+        path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
+      );
+      final fileDirectory = Directory(path.dirname(filePath));
+      if (!fileDirectory.existsSync()) {
+        fileDirectory.createSync(recursive: true);
+      }
+      entity.copySync(filePath);
+    } else if (entity is Directory) {
+      if (!directoryNames.contains(
+        path.basenameWithoutExtension(entity.path),
+      )) {
+        continue;
+      }
+      final files = entity
+          .listSync(recursive: true)
+          .where((e) => (e is File))
+          .cast<File>();
+      for (final File file in files) {
+        final String filePath = path.join(
+          path.joinAll(installPath),
+          path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
+          path.relative(file.path, from: entity.path),
+        );
+        final fileDirectory = Directory(path.dirname(filePath));
+        if (!fileDirectory.existsSync()) {
+          fileDirectory.createSync(recursive: true);
+        }
+        file.copySync(filePath);
       }
     }
-    stdout.writeln("");
-    return isAllFound;
   }
+}
+
+bool ensurePrograms(List<String> requiredPrograms) {
+  final String executableExtension = Platform.isWindows ? ".exe" : "";
+  final List<String> pathVariableEntries =
+      Platform.environment["PATH"]?.split(Platform.isWindows ? ";" : ":") ?? [];
+
+  if (requiredPrograms.isEmpty) return true;
+
+  bool isAllFound = true;
+  for (String program in requiredPrograms) {
+    bool found = false;
+    for (String pathVariableEntry in pathVariableEntries) {
+      final File programFile = File(
+        path.join(pathVariableEntry, "$program$executableExtension"),
+      );
+      if (programFile.existsSync()) {
+        found = true;
+      }
+    }
+
+    if (!found) {
+      final result = Process.runSync(
+        program,
+        [],
+        runInShell: true,
+        includeParentEnvironment: true,
+      );
+      if (result.exitCode == 0) {
+        found = true;
+      }
+    }
+
+    if (found) {
+      stdout.write("$program" + " ✔  ");
+    } else {
+      stderr.write("$program" + " ✖  ");
+      isAllFound = false;
+    }
+  }
+  stdout.writeln("");
+  return isAllFound;
 }
