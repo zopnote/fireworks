@@ -82,22 +82,22 @@ List<BuildStep> processSteps = [
   BuildStep(
     "Build the sdk for the target operating system",
     condition: (env) {
-      env.variables["dart_arch"] = {
+      env.variables["dart_architecture"] = {
         SystemProcessor.x86_64: "x64",
         SystemProcessor.arm64: "arm64",
         SystemProcessor.arm: "arm",
         SystemProcessor.riscv64: "riscv64",
         SystemProcessor.x86: "ia32",
       }[env.target.processor]!;
-      env.variables["dart_out_path"] = path.join(
+
+      env.variables["dart_binaries_path"] = path.join(
         env.workDirectoryPath,
         "sdk",
         "out",
-        "Release" + (env.variables["dart_arch"] as String).toUpperCase(),
+        "Product" +
+            (env.variables["dart_architecture"] as String).toUpperCase(),
       );
-      return !Directory(
-        env.variables["dart_out_path"]
-      ).existsSync();
+      return !Directory(env.variables["dart_binaries_path"]).existsSync();
     },
     command: (env) => BuildStepCommand(
       program: env.host.platform == SystemPlatform.windows
@@ -108,22 +108,93 @@ List<BuildStep> processSteps = [
         "--mode",
         "product",
         "--arch",
-        env.variables["dart_arch"],
+        env.variables["dart_architecture"],
         "create_sdk",
       ],
       workingDirectoryPath: path.join(env.workDirectoryPath, "sdk"),
     ),
   ),
-  BuildStep("Install platform sdk",
-    condition: (env) async {
-      return !Directory(path.join(env.installDirectoryPath, "bin")).existsSync();
-    },
+  BuildStep(
+    "Install platform sdk",
+    condition: (env) => !Directory(
+      path.join(env.installDirectoryPath, "bin", "utils"),
+    ).existsSync(),
     run: (env) {
-    return true;
-    }
+      final List<String> installable = [
+        "dart",
+        "dartaotruntime",
+        "utils",
+        "snapshot",
+        "lib",
+        "sdk_packages",
+        "version",
+        "revision",
+        "LICENSE",
+      ];
+      for (FileSystemEntity entity in Directory(
+        path.join(env.variables["dart_binaries_path"], "dart-sdk"),
+      ).listSync(recursive: true)) {
+        if (!installable.contains(path.basenameWithoutExtension(entity.path))) {
+          continue;
+        }
+        if (!(entity is File)) continue;
+        Directory(path.dirname(entity.path)).createSync(recursive: true);
+        entity.copySync(
+          path.join(
+            env.installDirectoryPath,
+            path.dirname(
+              path.relative(
+                entity.path,
+                from: path.join(
+                  env.variables["dart_binaries_path"],
+                  "dart-sdk",
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+      for (FileSystemEntity entity in Directory(
+        path.join(env.variables["dart_binaries_path"], "dart-sdk", "bin"),
+      ).listSync(recursive: true)) {
+        if (entity is File) {
+          if (!installable.contains(
+            path.basenameWithoutExtension(entity.path),
+          )) {
+            continue;
+          }
+
+          Directory(path.dirname(entity.path)).createSync(recursive: true);
+          entity.copySync(
+            path.join(
+              env.installDirectoryPath,
+              path.dirname(
+                path.relative(
+                  entity.path,
+                  from: path.join(
+                    env.variables["dart_binaries_path"],
+                    "dart-sdk",
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      }
+      return true;
+    },
   ),
   BuildStep(
-    "Build arm64 cross compilation gen snapshot tool",
+    "Build simarm64 cross compilation gen snapshot tool",
+    condition: (env) {
+      env.variables["snap_out_path"] = path.join(
+        env.workDirectoryPath,
+        "sdk",
+        "out",
+        "ReleaseSIMARM64",
+      );
+      return !Directory(env.variables["snap_out_path"]).existsSync();
+    },
     command: (env) {
       return BuildStepCommand(
         program: env.host.platform == SystemPlatform.windows
@@ -141,5 +212,35 @@ List<BuildStep> processSteps = [
       );
     },
   ),
-
+  BuildStep(
+    "Install simarm64 cross compilation gen snapshot tool",
+    condition: (env) {
+      env.variables["simarm64_snapshot_name"] = "simarm64_gen_snapshot";
+      bool found = true;
+      Directory(env.installDirectoryPath).listSync().forEach((e) {
+        if (path.basenameWithoutExtension(e.path) ==
+            env.variables["simarm64_snapshot_name"]) {
+          found = false;
+        }
+      });
+      return found;
+    },
+    run: (env) {
+      env.variables["executable_ending"] =
+          (env.target.platform == SystemPlatform.windows ? ".exe" : "");
+      Directory(env.installDirectoryPath).listSync().forEach((e) {
+        if (path.basenameWithoutExtension(e.path) ==
+            env.variables["simarm64_snapshot_name"]) {
+          (e as File).copySync(
+            path.join(
+              env.installDirectoryPath,
+              env.variables["simarm64_snapshot_name"] +
+                  env.variables["executable_ending"],
+            ),
+          );
+        }
+      });
+      return true;
+    },
+  ),
 ];

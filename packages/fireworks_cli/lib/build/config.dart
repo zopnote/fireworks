@@ -174,7 +174,7 @@ class BuildConfig {
    * Temporal directory for files.
    */
   String get workDirectoryPath =>
-      path.join(outputDirectoryPath, this.target.string(), ".${this.name}_build_data");
+      path.join(outputDirectoryPath, this.target.string(), "targets-build", this.name);
 
   /**
    * Directory of the script run in this isolate.

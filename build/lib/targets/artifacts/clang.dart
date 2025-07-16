@@ -99,7 +99,6 @@ final List<BuildStep> processSteps = [
         path.join(
           env.workDirectoryPath,
           env.variables["cmake_build_type"],
-          "bin",
           "clang" +
               (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
         ),
@@ -140,6 +139,26 @@ final List<BuildStep> processSteps = [
     "Remove unnecessary binaries",
     run: (env) {
       final List<String> deletable = [
+        "clang-cl",
+        "clang-cpp",
+        "clang++",
+        "clang-nvlink-wrapper",
+        "clang-linker-wrapper",
+        "clang-extdef-mapping",
+        "clang-installapi",
+        "clanf-extdef-mapping",
+        "LLVM-C",
+        "llvm-tblgen",
+        "libclang",
+        "LLVM-C",
+        "hmaptool",
+        "clang-sycl-linker",
+        "analyze-build",
+        "clang-repl",
+        "clang-scan-deps",
+        "clang-offload-packager",
+        "clang-offload-bundler",
+        "clang"
         "bin",
         "lib",
         "include",
