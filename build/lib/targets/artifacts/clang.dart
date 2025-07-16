@@ -24,13 +24,7 @@ import 'package:path/path.dart' as path;
 final List<BuildStep> processSteps = [
   BuildStep(
     "Check for available programs",
-    condition: (_) => !ensurePrograms(["git", "cmake", "python"]),
-    run: (env) async {
-      stderr.writeln(
-        "\nPlease ensure the availability of all dependencies to proceed.",
-      );
-      return false;
-    },
+    run: (_) => ensurePrograms(["git", "cmake", "python"]),
   ),
   BuildStep(
     "Clone repository",
@@ -71,8 +65,6 @@ final List<BuildStep> processSteps = [
           [
             "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
             "-B ${env.workDirectoryPath}",
-            "-DCMAKE_INSTALL_PREFIX=${env.installDirectoryPath}",
-            "-DCMAKE_INSTALL_BINDIR=${env.installDirectoryPath}",
             "-DCMAKE_BUILD_TYPE=" + env.variables["cmake_build_type"],
             "-DLLVM_BUILD_TOOLS=OFF",
             "-DLLVM_INCLUDE_BENCHMARKS=OFF",
@@ -126,73 +118,25 @@ final List<BuildStep> processSteps = [
         ),
       ).existsSync();
     },
-    command: (env) => BuildStepCommand(
-      program: "cmake",
-      arguments: [
-        "--install",
-        env.workDirectoryPath,
-        "--config",
-        env.variables["cmake_build_type"],
-      ],
-    ),
-  ),
-  BuildStep(
-    "Remove unnecessary binaries",
     run: (env) {
-      final List<String> deletable = [
-        "clang-cl",
-        "clang-cpp",
-        "clang++",
-        "clang-nvlink-wrapper",
-        "clang-linker-wrapper",
-        "clang-extdef-mapping",
-        "clang-installapi",
-        "clanf-extdef-mapping",
-        "LLVM-C",
-        "llvm-tblgen",
-        "libclang",
-        "LLVM-C",
-        "hmaptool",
-        "clang-sycl-linker",
-        "analyze-build",
-        "clang-repl",
-        "clang-scan-deps",
-        "clang-offload-packager",
-        "clang-offload-bundler",
-        "clang"
-            "bin",
-        "lib",
-        "include",
-        "libexec",
-        "share",
-        "amdgpu-arch",
-        "c-index-test",
-        "diagtool",
-        "LTO",
-        "Remarks",
-        "nvptx-arch",
-        "git-clang-format",
-        "git-clang-format.bat",
-        "intercept-build",
-        "scan-build",
-        "scan-build.bat",
-        "scan-build-py",
-        "scan-view",
-      ];
-
-      final directory = Directory(env.installDirectoryPath);
+      install(
+        installPath: [env.installDirectoryPath, "bin"],
+        rootDirectoryPath: [
+          env.workDirectoryPath,
+          env.variables["cmake_build_type"],
+          "bin",
+        ],
+        fileNames: [
+          "clang"
+        ]
+      );
       File(
         path.join(
           env.workDirectoryPath,
           env.variables["repository_name"]!,
           "LICENSE.TXT",
         ),
-      ).copySync(path.join(env.installDirectoryPath, "LICENSE.TXT"));
-      for (FileSystemEntity entity in directory.listSync()) {
-        if (deletable.contains(path.basenameWithoutExtension(entity.path))) {
-          entity.deleteSync(recursive: true);
-        }
-      }
+      ).copySync(path.join(env.installDirectoryPath, "clang.license"));
       return true;
     },
   ),

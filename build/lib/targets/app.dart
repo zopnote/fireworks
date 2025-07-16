@@ -13,20 +13,16 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
 import 'package:fireworks.cli/build/process.dart';
 
-import 'targets/artifacts/clang.dart' as clang;
-import 'targets/artifacts/dart_sdk.dart' as dart_sdk;
-import 'targets/app.dart' as app;
-import 'targets/sdk.dart' as sdk;
-
-
-/// All registered build targets
-final Map<String, List<BuildStep>> targets = {
-  "sdk": sdk.processSteps,
-  "clang": clang.processSteps,
-  "dart_sdk": dart_sdk.processSteps,
-  "app": app.processSteps
-};
+final List<BuildStep> processSteps = [
+  BuildStep(
+    "Ensure environment variables",
+    run: (env) {
+      return true;
+    }
+  ),
+];

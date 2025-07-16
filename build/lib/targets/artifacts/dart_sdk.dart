@@ -24,7 +24,7 @@ import 'package:path/path.dart' as path;
 List<BuildStep> processSteps = [
   BuildStep(
     "Ensures programs in environment",
-    condition: (env) => ensurePrograms(["python", "git"]),
+    run: (env) => ensurePrograms(["python", "git"]),
   ),
   BuildStep(
     "Set system variable",
@@ -45,14 +45,13 @@ List<BuildStep> processSteps = [
       );
       return !Directory(env.variables["repository_path"]).existsSync();
     },
-    command: (env) {
-      return BuildStepCommand(
-        program: "git",
-        arguments: ["clone", env.variables["repository_url"]],
-      );
-    },
+    command: (env) => BuildStepCommand(
+      program: "git",
+      arguments: ["clone", env.variables["repository_url"]],
+    ),
     exitFail: false,
   ),
+
   BuildStep(
     "Fetch the dart sdk",
     condition: (env) => !File(
@@ -60,7 +59,7 @@ List<BuildStep> processSteps = [
     ).existsSync(),
     command: (env) => BuildStepCommand(
       program: path.join(env.variables["repository_path"], "fetch"),
-      arguments: ["dart"],
+      arguments: ["dart", "--tag", "3.8.1"],
       administrator: env.host.platform == SystemPlatform.windows,
     ),
     spinner: true,
@@ -129,12 +128,6 @@ List<BuildStep> processSteps = [
       install(
         installPath: [env.installDirectoryPath],
         rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
-        relativePath: ["bin", "utils"],
-        fileNames: ["gen_snapshot"],
-      );
-      install(
-        installPath: [env.installDirectoryPath],
-        rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
         relativePath: ["lib", "_internal"],
         directoryNames: ["vm", "vm_shared", "sdk_library_metadata"],
         fileNames: [
@@ -181,9 +174,10 @@ List<BuildStep> processSteps = [
         ],
       );
       install(
-        installPath: [env.installDirectoryPath],
+        installPath: [env.installDirectoryPath, "bin", "utils"],
         rootDirectoryPath: [env.variables["dart_binaries_path"]!],
         fileNames: [
+          "gen_snapshot_product",
           "gen_snapshot_product_linux_x64",
           "gen_snapshot_product_linux_arm64",
           "gen_snapshot_product_linux_riscv64",
@@ -195,7 +189,12 @@ List<BuildStep> processSteps = [
         rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
         fileNames: ["version", "LICENSE"],
       );
-
+      File(
+        path.join(env.installDirectoryPath, "LICENSE"),
+      ).rename(path.join(env.installDirectoryPath, "dart.license"));
+      File(
+        path.join(env.installDirectoryPath, "version"),
+      ).rename(path.join(env.installDirectoryPath, "dart.version"));
       return true;
     },
   ),
@@ -256,6 +255,8 @@ List<BuildStep> processSteps = [
       File(env.variables["simarm64_snapshot_path"]).copySync(
         path.join(
           env.installDirectoryPath,
+          "bin",
+          "utils",
           "gen_snapshot_product_simarm64" + env.variables["executable_ending"],
         ),
       );

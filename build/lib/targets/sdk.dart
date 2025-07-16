@@ -23,20 +23,36 @@ final List<BuildStep> processSteps = [
   BuildStep(
     "Build high priority dependency artifacts",
     run: (env) async {
-      bool result = await BuildConfig(
+      final String vendorPath = "vendor";
+
+
+      final BuildConfig clangConfig = BuildConfig(
         "clang",
-        installPath: ["bin", "clang"],
+        installPath: [vendorPath],
         buildType: env.buildType,
         variables: env.variables,
         target: env.target
-      ).execute(targets["clang"]!);
-      result = result && await BuildConfig(
+      );
+      final BuildConfig dartConfig = BuildConfig(
           "dart_sdk",
-          installPath: ["bin", "dart"],
+          installPath: [vendorPath],
           buildType: env.buildType,
           variables: env.variables,
           target: env.target
-      ).execute(targets["dart_sdk"]!);
+      );
+      final BuildConfig appConfig = BuildConfig(
+          "app",
+          installPath: ["bin"],
+          buildType: env.buildType,
+          variables: {
+            "dart_sdk_path": "",
+          }..addAll(env.variables),
+          target: env.target
+      );
+      bool result = false;
+      result = await clangConfig.execute(targets["clang"]!);
+      result = result && await dartConfig.execute(targets["dart_sdk"]!);
+      result = result && await appConfig.execute(targets["app"]!);
       return result;
     }
   )

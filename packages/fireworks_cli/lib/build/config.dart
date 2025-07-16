@@ -223,7 +223,7 @@ class BuildConfig {
     return toJsonMap(variables);
   }
 
-  Future<bool> execute(List<BuildStep> steps) async {
+  Future<bool> execute(List<BuildStep> steps, {String suffix = ""}) async {
     if (!Directory(this.outputDirectoryPath).existsSync()) {
       Directory(this.outputDirectoryPath).createSync(recursive: true);
     }
@@ -279,7 +279,7 @@ class BuildConfig {
       try {
         result = await steps[i].execute(
           env: this,
-          message: "⟮${i + 1}⁄${steps.length}⟯ ",
+          message: "${"⟮" + this.name + "⟯ "}⟮${i + 1}⁄${steps.length}⟯ -- ",
         );
       } catch (e) {
         stderr.writeln(
