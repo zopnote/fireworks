@@ -45,7 +45,8 @@ final List<BuildStep> processSteps = [
           installPath: ["bin"],
           buildType: env.buildType,
           variables: {
-            "dart_sdk_path": "",
+            "dart_sdk_path": dartConfig.installDirectoryPath,
+            "clang_path": clangConfig.installDirectoryPath
           }..addAll(env.variables),
           target: env.target
       );

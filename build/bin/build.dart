@@ -21,6 +21,7 @@ import 'package:fireworks.cli/build/config.dart';
 import 'package:fireworks.cli/command/runner.dart';
 
 import 'package:fireworks.build/targets.dart';
+import '../../app/app.build.dart';
 
 Future<int> main(List<String> args) => execute(
   args,
@@ -149,7 +150,7 @@ CommandRunner build = (data) async {
   if (verbose) {
     stdout.writeln("Execute build configuration and target build steps...");
   }
-
+  test();
   return CommandResponse(
     error: !await BuildConfig(
       data.arg,

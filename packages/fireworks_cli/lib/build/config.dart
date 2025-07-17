@@ -17,7 +17,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'process.dart';
 import 'package:path/path.dart' as path;
@@ -275,15 +274,31 @@ class BuildConfig {
           "\n\n${"-" * bars}\n${" " * 26}STEPS EXECUTION\n\n${"." * dots * 2}",
     );
 
+    int skipped = 0;
     for (int i = 0; i < steps.length; i++) {
+      final BuildStep step = steps[i];
       try {
-        result = await steps[i].execute(
+        const String spaceCharacter = " ";
+        String targetName = "⟮" + this.name + "⟯" + spaceCharacter;
+        String message = targetName + "⟮${i + 1}⁄${steps.length}⟯" + spaceCharacter;
+
+        if (step.configure != null) {
+          await step.configure!(this);
+        }
+        if (step.condition != null) {
+          if (!await step.condition!(this)) {
+            stdout.writeln(message + "Skipped");
+            continue;
+          }
+        }
+        result = await step.execute(
           env: this,
-          message: "${"⟮" + this.name + "⟯ "}⟮${i + 1}⁄${steps.length}⟯ -- ",
+          message: message + step.name,
         );
+
       } catch (e) {
         stderr.writeln(
-          "\nError while executing step '${steps[i].name}' (${i + 1} out of ${steps.length}).",
+          "\nError while executing step '${step.name}' (${i + 1} out of ${steps.length}).",
         );
         rethrow;
       }
@@ -291,17 +306,17 @@ class BuildConfig {
         <String, dynamic>{
           "index": "${i + 1} of ${steps.length}",
           "result": result,
-          "description": steps[i].name,
-          "wasCritical": steps[i].exitFail && !result,
-          if (steps[i].command != null)
+          "description": step.name,
+          "wasCritical": step.exitFail && !result,
+          if (step.command != null)
             "command":
-                steps[i].command!(this).program +
+                step.command!(this).program +
                 " " +
-                steps[i].command!(this).arguments.join(" "),
+                step.command!(this).arguments.join(" "),
         }..addAll(toJson()),
       );
 
-      if (!result && steps[i].exitFail) {
+      if (!result && step.exitFail) {
         return false;
       }
     }
@@ -309,7 +324,7 @@ class BuildConfig {
   }
 }
 
-void install({
+bool install({
   List<String> installPath = const [],
   List<String> directoryNames = const [],
   List<String> fileNames = const [],
@@ -317,50 +332,55 @@ void install({
   List<String> excludeEndings = const [],
   List<String> relativePath = const [],
 }) {
-  final Directory workDirectory = Directory(
-    path.joinAll(rootDirectoryPath + relativePath),
-  );
-  for (final entity in workDirectory.listSync()) {
-    if (entity is File) {
-      if (!fileNames.contains(path.basenameWithoutExtension(entity.path))) {
-        continue;
-      }
-      if (excludeEndings.contains(path.extension(entity.path))) {
-        continue;
-      }
-      final String filePath = path.join(
-        path.joinAll(installPath),
-        path.joinAll(installPath),
-        path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
-      );
-      final fileDirectory = Directory(path.dirname(filePath));
-      if (!fileDirectory.existsSync()) {
-        fileDirectory.createSync(recursive: true);
-      }
-      entity.copySync(filePath);
-    } else if (entity is Directory) {
-      if (!directoryNames.contains(
-        path.basenameWithoutExtension(entity.path),
-      )) {
-        continue;
-      }
-      final files = entity
-          .listSync(recursive: true)
-          .where((e) => (e is File))
-          .cast<File>();
-      for (final File file in files) {
+  try {
+    final Directory workDirectory = Directory(
+      path.joinAll(rootDirectoryPath + relativePath),
+    );
+    for (final entity in workDirectory.listSync()) {
+      if (entity is File) {
+        if (!fileNames.contains(path.basenameWithoutExtension(entity.path))) {
+          continue;
+        }
+        if (excludeEndings.contains(path.extension(entity.path))) {
+          continue;
+        }
         final String filePath = path.join(
           path.joinAll(installPath),
+          path.joinAll(installPath),
           path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
-          path.relative(file.path, from: entity.path),
         );
         final fileDirectory = Directory(path.dirname(filePath));
         if (!fileDirectory.existsSync()) {
           fileDirectory.createSync(recursive: true);
         }
-        file.copySync(filePath);
+        entity.copySync(filePath);
+      } else if (entity is Directory) {
+        if (!directoryNames.contains(
+          path.basenameWithoutExtension(entity.path),
+        )) {
+          continue;
+        }
+        final files = entity
+            .listSync(recursive: true)
+            .where((e) => (e is File))
+            .cast<File>();
+        for (final File file in files) {
+          final String filePath = path.join(
+            path.joinAll(installPath),
+            path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
+            path.relative(file.path, from: entity.path),
+          );
+          final fileDirectory = Directory(path.dirname(filePath));
+          if (!fileDirectory.existsSync()) {
+            fileDirectory.createSync(recursive: true);
+          }
+          file.copySync(filePath);
+        }
       }
     }
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
@@ -395,13 +415,10 @@ bool ensurePrograms(List<String> requiredPrograms) {
       }
     }
 
-    if (found) {
-      stdout.write("$program" + " ✔  ");
-    } else {
+    if (!found) {
       stderr.write("$program" + " ✖  ");
       isAllFound = false;
     }
   }
-  stdout.writeln("");
   return isAllFound;
 }

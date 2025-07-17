@@ -28,16 +28,16 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Clone repository",
-    condition: (env) {
+    configure: (env) {
       env.variables["repository_url"] =
           "https://github.com/llvm/llvm-project.git";
       env.variables["repository_name"] = path.basenameWithoutExtension(
         env.variables["repository_url"],
       );
-      return !Directory(
-        path.join(env.workDirectoryPath, env.variables["repository_name"]!),
-      ).existsSync();
     },
+    condition: (env) => !Directory(
+      path.join(env.workDirectoryPath, env.variables["repository_name"]!),
+    ).existsSync(),
     command: (env) => BuildStepCommand(
       program: "git",
       arguments: [
@@ -53,17 +53,20 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "CMake configuration",
-    condition: (env) {
+    configure: (env) {
       env.variables["cmake_build_type"] = "MinSizeRel";
-      return !File(
-        path.join(env.workDirectoryPath, "CMakeCache.txt"),
-      ).existsSync();
+      env.variables["repository_path"] = path.join(
+        env.workDirectoryPath,
+        env.variables["repository_name"]!,
+      );
     },
+    condition: (env) =>
+        !File(path.join(env.workDirectoryPath, "CMakeCache.txt")).existsSync(),
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments:
           [
-            "-S ${path.join(env.workDirectoryPath, env.variables["repository_name"]!)}/llvm",
+            "-S ${env.variables["repository_path"]}/llvm",
             "-B ${env.workDirectoryPath}",
             "-DCMAKE_BUILD_TYPE=" + env.variables["cmake_build_type"],
             "-DLLVM_BUILD_TOOLS=OFF",
@@ -86,17 +89,14 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Build project files",
-    condition: (env) {
-      return !File(
-        path.join(
-          env.workDirectoryPath,
-          env.variables["cmake_build_type"],
-          "bin",
-          "clang" +
-              (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
-        ),
-      ).existsSync();
-    },
+    condition: (env) => !File(
+      path.join(
+        env.workDirectoryPath,
+        env.variables["cmake_build_type"],
+        "bin",
+        "clang" + (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
+      ),
+    ).existsSync(),
     command: (env) => BuildStepCommand(
       program: "cmake",
       arguments: [
@@ -109,35 +109,40 @@ final List<BuildStep> processSteps = [
   ),
   BuildStep(
     "Install project binaries",
-    condition: (env) {
-      return !File(
-        path.join(
-          env.installDirectoryPath,
-          "clang" +
-              (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
-        ),
-      ).existsSync();
-    },
-    run: (env) {
-      install(
-        installPath: [env.installDirectoryPath, "bin"],
-        rootDirectoryPath: [
-          env.workDirectoryPath,
-          env.variables["cmake_build_type"],
-          "bin",
-        ],
-        fileNames: [
-          "clang"
-        ]
+    configure: (env) {
+      env.variables["clang_executable_path"] = path.join(
+        env.installDirectoryPath, "bin",
+        "clang" + (env.target.platform == SystemPlatform.windows ? ".exe" : ""),
       );
-      File(
-        path.join(
-          env.workDirectoryPath,
-          env.variables["repository_name"]!,
-          "LICENSE.TXT",
-        ),
-      ).copySync(path.join(env.installDirectoryPath, "clang.license"));
-      return true;
     },
+    condition: (env) =>
+        !File(env.variables["clang_executable_path"]).existsSync(),
+    run: (env) => install(
+      installPath: [env.installDirectoryPath, "bin"],
+      rootDirectoryPath: [
+        env.workDirectoryPath,
+        env.variables["cmake_build_type"],
+        "bin",
+      ],
+      fileNames: ["clang"],
+    ),
+  ),
+  BuildStep(
+    "Copy license file",
+    configure: (env) {
+      env.variables["license_path"] = path.join(
+        env.variables["repository_path"]!,
+        "LICENSE.TXT",
+      );
+      env.variables["license_install_path"] = path.join(
+        env.installDirectoryPath,
+        "clang.license",
+      );
+    },
+    condition: (env) =>
+        !File(env.variables["license_install_path"]).existsSync(),
+    run: (env) => (File(
+      env.variables["license_path"],
+    )..copySync(env.variables["license_install_path"])).existsSync(),
   ),
 ];

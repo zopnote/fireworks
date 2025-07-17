@@ -35,7 +35,6 @@ final class BuildStepCommand {
 
   final String? workingDirectoryPath;
 
-
   /// Should run the command in an external shell.
   final bool shell;
 
@@ -67,6 +66,7 @@ class BuildStep {
   final bool exitFail;
 
   final FutureOr<bool> Function(BuildConfig environment)? condition;
+  final FutureOr<void> Function(BuildConfig environment)? configure;
 
   /// If the process should get a spinner.
   /// Notice that any input to stdout or stderr will move the spinner to the last line.
@@ -74,13 +74,13 @@ class BuildStep {
   /// or another step will be executed.
   final bool spinner;
 
-
   const BuildStep(
     this.name, {
     this.command,
     this.run,
     this.exitFail = true,
     this.condition,
+    this.configure,
     this.spinner = false,
   });
 
@@ -88,27 +88,20 @@ class BuildStep {
     required final BuildConfig env,
     String message = "",
   }) async {
-    if (message[message.length - 1] != " " && message.isNotEmpty) {
-      message += " ";
-    }
     ProcessSpinner? spinner;
     bool exitExecute(bool returnable) {
       if (spinner != null) {
-        spinner.stop(message + name);
+        spinner.stop(message);
         return returnable;
       }
       return returnable;
     }
 
+
     if (this.spinner) {
-      spinner = ProcessSpinner()..start(message + name);
+      spinner = ProcessSpinner()..start(message);
     } else {
-      stdout.writeln(message + name);
-    }
-    if (condition != null) {
-      if (!await condition!(env)) {
-        return exitExecute(true);
-      }
+      stdout.writeln(message);
     }
     if (run != null) {
       return exitExecute(await run!(env));
