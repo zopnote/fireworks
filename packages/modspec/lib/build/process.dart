@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
-import 'config.dart';
+import 'environment.dart';
 
 final class BuildStepCommand {
   final String program;
@@ -58,15 +58,15 @@ class BuildStep {
   final String name;
 
   /// Function that will run.
-  final FutureOr<bool> Function(BuildConfig environment)? run;
+  final FutureOr<bool> Function(BuildEnvironment environment)? run;
 
-  final BuildStepCommand Function(BuildConfig environment)? command;
+  final BuildStepCommand Function(BuildEnvironment environment)? command;
 
   /// If a false value received by run() or the command should terminate the [BuildProcess]
   final bool exitFail;
 
-  final FutureOr<bool> Function(BuildConfig environment)? condition;
-  final FutureOr<void> Function(BuildConfig environment)? configure;
+  final FutureOr<bool> Function(BuildEnvironment environment)? condition;
+  final FutureOr<void> Function(BuildEnvironment environment)? configure;
 
   /// If the process should get a spinner.
   /// Notice that any input to stdout or stderr will move the spinner to the last line.
@@ -85,7 +85,7 @@ class BuildStep {
   });
 
   Future<bool> execute({
-    required final BuildConfig env,
+    required final BuildEnvironment env,
     String message = "",
   }) async {
     ProcessSpinner? spinner;

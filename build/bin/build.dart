@@ -17,11 +17,11 @@
 
 import 'dart:io';
 
-import 'package:fireworks.cli/build/config.dart';
+import 'package:fireworks.cli/build/environment.dart';
 import 'package:fireworks.cli/command/runner.dart';
 
 import 'package:fireworks.build/targets.dart';
-import '../../app/app.build.dart';
+import '../../app/modspec.dart';
 
 Future<int> main(List<String> args) => execute(
   args,

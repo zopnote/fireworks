@@ -17,7 +17,7 @@
 
 import 'dart:io';
 
-import 'package:fireworks.cli/build/config.dart';
+import 'package:fireworks.cli/build/environment.dart';
 import 'package:fireworks.cli/build/process.dart';
 import 'package:path/path.dart' as path;
 

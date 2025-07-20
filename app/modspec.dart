@@ -13,5 +13,11 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
+import 'package:modspec/build/environment.dart';
+
+Future<bool> buildModule(BuildEnvironment env) => env.execute([
+
+]);

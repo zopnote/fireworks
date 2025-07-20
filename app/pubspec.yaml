@@ -8,5 +8,5 @@ environment:
 
 dependencies:
   path: ^1.9.1
-  fireworks.cli:
-    path: ../packages/fireworks_cli
+  modspec:
+    path: ../packages/modspec

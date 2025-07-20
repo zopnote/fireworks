@@ -15,7 +15,7 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'package:fireworks.cli/build/config.dart';
+import 'package:fireworks.cli/build/environment.dart';
 import 'package:fireworks.cli/build/process.dart';
 import '../targets.dart';
 

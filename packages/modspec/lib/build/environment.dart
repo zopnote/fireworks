@@ -113,7 +113,7 @@ final class System {
  *
  * Manages the build life cycle with [BuildStep].
  */
-class BuildConfig {
+class BuildEnvironment {
   /**
    * Name of the configuration to ensure no data conflicts between different build artifacts
    * a build configuration is used for. The name makes clear what is currently built with
@@ -186,7 +186,7 @@ class BuildConfig {
       ? path.dirname(Platform.script.path).substring(1)
       : path.dirname(Platform.script.path);
 
-  BuildConfig(
+  BuildEnvironment(
     this.name, {
     List<String> installPath = const [],
     final System? target,
@@ -274,7 +274,6 @@ class BuildConfig {
           "\n\n${"-" * bars}\n${" " * 26}STEPS EXECUTION\n\n${"." * dots * 2}",
     );
 
-    int skipped = 0;
     for (int i = 0; i < steps.length; i++) {
       final BuildStep step = steps[i];
       try {

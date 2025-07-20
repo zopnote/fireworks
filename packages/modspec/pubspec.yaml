@@ -1,5 +1,5 @@
-name: fireworks.cli
-description: Fireworks command line tooling
+name: modspec
+description: Module specification package
 version: 1.0.0
 publish_to: "none"
 environment: 
