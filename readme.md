@@ -1,4 +1,4 @@
-   # ![fireworks_logo](.github/images/fireworks_branding.png)
+### ![fireworks_logo](.github/images/fireworks_branding.png)
 
 **Fireworks** is a sdk and framework developed for the creation 
 of 3d graphic programs such as games and simulations.
