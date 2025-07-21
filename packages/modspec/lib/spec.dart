@@ -13,19 +13,23 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
-import 'build.dart';
-import 'targets/vendor/clang.dart' as clang;
-import 'targets/vendor/dart_sdk.dart' as dart_sdk;
-import 'targets/app/app.dart' as app;
-import 'targets/sdk.dart' as sdk;
+import 'package:modspec/build.dart';
 
+class Module {
+  final String name;
+  final String description;
+  final String version;
+  final List<Module>? submodules;
+  final List<Step>? steps;
 
-/// All registered build targets
-final Map<String, List<Step>> targets = {
-  "sdk": sdk.processSteps,
-  "clang": clang.processSteps,
-  "dart_sdk": dart_sdk.processSteps,
-  "app": app.processSteps
-};
+  Module({
+    required this.name,
+    required this.description,
+    required this.version,
+    this.submodules,
+    this.steps
+  });
+}

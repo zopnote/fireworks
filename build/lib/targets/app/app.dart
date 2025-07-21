@@ -16,10 +16,11 @@
  *
  */
 
-import 'package:fireworks.cli/build/process.dart';
 
-final List<BuildStep> processSteps = [
-  BuildStep(
+import '../../build.dart';
+
+final List<Step> processSteps = [
+  Step(
     "Ensure environment variables",
     run: (env) {
       return true;

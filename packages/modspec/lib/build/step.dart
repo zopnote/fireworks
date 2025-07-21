@@ -13,16 +13,20 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+
+import 'dart:async' as async;
+import 'dart:convert' as convert;
+import 'dart:io' as io;
+
 import 'package:path/path.dart' as path;
 
+import 'process_spinner.dart';
 import 'environment.dart';
 
-final class BuildStepCommand {
+final class StepCommand {
   final String program;
   final List<String> arguments;
 
@@ -38,7 +42,7 @@ final class BuildStepCommand {
   /// Should run the command in an external shell.
   final bool shell;
 
-  const BuildStepCommand({
+  const StepCommand({
     required this.program,
     required this.arguments,
     this.shell = false,
@@ -54,19 +58,19 @@ final class BuildStepCommand {
 /**
  * Representation of a command that can be executed as part of [BuildProcess];
  */
-class BuildStep {
+class Step {
   final String name;
 
   /// Function that will run.
-  final FutureOr<bool> Function(BuildEnvironment environment)? run;
+  final async.FutureOr<bool> Function(Environment environment)? run;
 
-  final BuildStepCommand Function(BuildEnvironment environment)? command;
+  final StepCommand Function(Environment environment)? command;
 
   /// If a false value received by run() or the command should terminate the [BuildProcess]
   final bool exitFail;
 
-  final FutureOr<bool> Function(BuildEnvironment environment)? condition;
-  final FutureOr<void> Function(BuildEnvironment environment)? configure;
+  final async.FutureOr<bool> Function(Environment environment)? condition;
+  final async.FutureOr<void> Function(Environment environment)? configure;
 
   /// If the process should get a spinner.
   /// Notice that any input to stdout or stderr will move the spinner to the last line.
@@ -74,18 +78,17 @@ class BuildStep {
   /// or another step will be executed.
   final bool spinner;
 
-  const BuildStep(
-    this.name, {
-    this.command,
-    this.run,
-    this.exitFail = true,
-    this.condition,
-    this.configure,
-    this.spinner = false,
-  });
+  const Step(
+      this.name, {
+        this.command,
+        this.run,
+        this.exitFail = true,
+        this.condition,
+        this.configure,
+        this.spinner = false,
+      });
 
-  Future<bool> execute({
-    required final BuildEnvironment env,
+  Future<bool> execute(final Environment env, {
     String message = "",
   }) async {
     ProcessSpinner? spinner;
@@ -101,7 +104,7 @@ class BuildStep {
     if (this.spinner) {
       spinner = ProcessSpinner()..start(message);
     } else {
-      stdout.writeln(message);
+      io.stdout.writeln(message);
     }
     if (run != null) {
       return exitExecute(await run!(env));
@@ -111,11 +114,11 @@ class BuildStep {
       return exitExecute(true);
     }
 
-    final BuildStepCommand command = this.command!(env);
+    final StepCommand command = this.command!(env);
     final String program = command.administrator
-        ? Platform.isWindows
-              ? "powershell.exe"
-              : "sudo ${command.program}"
+        ? io.Platform.isWindows
+        ? "powershell.exe"
+        : "sudo ${command.program}"
         : command.program;
 
     final List<String> arguments;
@@ -123,7 +126,7 @@ class BuildStep {
       command.workingDirectoryPath ?? env.workDirectoryPath,
       ".dart-process-done",
     );
-    if (command.administrator && Platform.isWindows) {
+    if (command.administrator && io.Platform.isWindows) {
       arguments = [
         "-Command",
         """
@@ -147,7 +150,7 @@ class BuildStep {
     }
 
     final Map<String, String> processableEnvironment = {};
-    env.variables.forEach((key, value) {
+    env.vars.forEach((key, value) {
       if (value is String) {
         processableEnvironment[key] = value;
       } else if (value is num) {
@@ -155,76 +158,29 @@ class BuildStep {
       }
     });
 
-    final result = await Process.start(
+    final result = await io.Process.start(
       program,
       arguments,
       workingDirectory: command.workingDirectoryPath ?? env.workDirectoryPath,
       environment: processableEnvironment,
       includeParentEnvironment: true,
-      mode: ProcessStartMode.normal,
+      mode: io.ProcessStartMode.normal,
       runInShell: command.shell,
     );
     if (command.administrator)
       await waitWhile(() {
-        return File(doneFilePath).existsSync();
+        return io.File(doneFilePath).existsSync();
       }, Duration(seconds: 1));
 
     if (!this.spinner) {
       void Function(String) writeln = (data) {
-        stdout.writeln(data.trim());
+        io.stdout.writeln(data.trim());
       };
-      result.stdout.transform(utf8.decoder).listen(writeln);
-      result.stderr.transform(utf8.decoder).listen(writeln);
+      result.stdout.transform(convert.utf8.decoder).listen(writeln);
+      result.stderr.transform(convert.utf8.decoder).listen(writeln);
     }
 
     final exitCode = await result.exitCode;
     return exitExecute(exitCode == 0);
   }
-}
-
-class ProcessSpinner {
-  static const List<String> _frames = [
-    '⠋',
-    '⠙',
-    '⠹',
-    '⠸',
-    '⠼',
-    '⠴',
-    '⠦',
-    '⠧',
-    '⠇',
-    '⠏',
-  ];
-
-  Timer? _timer;
-  int _counter = 0;
-
-  void start([String message = '']) {
-    _counter = 0;
-    _timer?.cancel();
-    _timer = Timer.periodic(Duration(milliseconds: 80), (timer) {
-      stdout.write('\r$message ${_frames[_counter % _frames.length]}');
-      _counter++;
-    });
-  }
-
-  void stop([String message = ""]) {
-    _timer?.cancel();
-    stdout.write('\r');
-    stdout.write(message + "\n");
-  }
-}
-
-Future waitWhile(bool test(), [Duration pollInterval = Duration.zero]) {
-  var completer = new Completer();
-  check() {
-    if (!test()) {
-      completer.complete();
-    } else {
-      new Timer(pollInterval, check);
-    }
-  }
-
-  check();
-  return completer.future;
 }

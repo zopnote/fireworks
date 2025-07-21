@@ -15,7 +15,7 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'package:fireworks.cli/command/runner.dart';
+import '../runner.dart';
 
 CommandRunner doctor = (data) {
   return CommandResponse(message: "Escaped successful.");

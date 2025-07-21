@@ -15,145 +15,171 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:fireworks.cli/build/environment.dart';
-import 'package:fireworks.cli/build/process.dart';
 import 'package:path/path.dart' as path;
 
-List<BuildStep> processSteps = [
-  BuildStep(
+import '../../build.dart';
+
+List<Step> processSteps = [
+  Step(
     "Ensures programs in environment",
     run: (env) => ensurePrograms(["python", "git"]),
   ),
-  BuildStep(
+  /**
+   * The chromium toolchain has to be cloned first.
+   */
+  Step(
     "Clone depot tools repository",
     configure: (env) {
-      env.variables["depot_tools_url"] =
+      env.vars["depot_tools_url"] =
           "https://chromium.googlesource.com/chromium/tools/depot_tools.git";
-      env.variables["depot_tools_path"] = path.join(
+      env.vars["depot_tools_path"] = path.join(
         env.workDirectoryPath,
-        path.basenameWithoutExtension(env.variables["depot_tools_url"]),
+        path.basenameWithoutExtension(env.vars["depot_tools_url"]),
       );
     },
-    condition: (env) =>
-        !Directory(env.variables["depot_tools_path"]).existsSync(),
-    command: (env) => BuildStepCommand(
+    condition: (env) => !Directory(env.vars["depot_tools_path"]).existsSync(),
+    command: (env) => StepCommand(
       program: "git",
-      arguments: ["clone", env.variables["depot_tools_url"]],
+      arguments: ["clone", env.vars["depot_tools_url"]],
     ),
     exitFail: false,
   ),
-
-  BuildStep(
+  /**
+   * The Dart SDK depend on the chromium toolchain and has to be fetched
+   * with the depot_tools fetch tool. We set DEPOT_TOOLS_WIN_TOOLCHAIN,
+   * because if we doesn't a google toolchain is downloaded to compile
+   * C++ instead of the local installation of gcc or msvc.
+   */
+  Step(
     "Fetch the dart sdk",
     configure: (env) {
-      if (env.host.platform == SystemPlatform.windows) {
-        env.variables["DEPOT_TOOLS_WIN_TOOLCHAIN"] = 0;
+      if (env.host.platform == Platform.windows) {
+        env.vars["DEPOT_TOOLS_WIN_TOOLCHAIN"] = 0;
       }
     },
     condition: (env) => !File(
       path.join(env.workDirectoryPath, ".dart-process-done"),
     ).existsSync(),
-    command: (env) => BuildStepCommand(
-      program: path.join(env.variables["depot_tools_path"], "fetch"),
+    command: (env) => StepCommand(
+      program: path.join(env.vars["depot_tools_path"], "fetch"),
       arguments: ["dart"],
-      administrator: env.host.platform == SystemPlatform.windows,
+      administrator: env.host.platform == Platform.windows,
     ),
     spinner: true,
   ),
-  BuildStep(
+
+  /**
+   * In debug mode we save all available versions of the repository.
+   * For version upgrades and information.
+   */
+  Step(
     "Save available dart git tags",
     configure: (env) {
-      env.variables["dart_tags_path"] = path.join(
+      env.vars["dart_tags_path"] = path.join(
         env.workDirectoryPath,
         ".dart-available-versions",
       );
-      env.variables["dart_sdk_path"] = path.join(env.workDirectoryPath, "sdk");
+      env.vars["dart_sdk_path"] = path.join(env.workDirectoryPath, "sdk");
     },
     condition: (env) =>
-        (env.buildType != BuildType.release) &&
-        !File(env.variables["dart_tags_path"]).existsSync(),
-    command: (env) => BuildStepCommand(
+        (env.config != Config.release) &&
+        !File(env.vars["dart_tags_path"]).existsSync(),
+    command: (env) => StepCommand(
       program: "git",
       arguments: [
         "tag",
         ">>",
-        path.join("..", path.basename(env.variables["dart_tags_path"])),
+        path.join("..", path.basename(env.vars["dart_tags_path"])),
       ],
-      workingDirectoryPath: env.variables["dart_sdk_path"],
+      workingDirectoryPath: env.vars["dart_sdk_path"],
       shell: true,
     ),
   ),
-  BuildStep(
+
+  /**
+   * We checkout the desired, current Dart SDK version tag to stand stable in versioning.
+   */
+  Step(
     "Switch dart version tag",
+
     condition: (env) => !File(
       path.join(env.workDirectoryPath, ".gclient_previous_sync_commits"),
     ).existsSync(),
-    command: (env) => BuildStepCommand(
+
+    command: (env) => StepCommand(
       program: "git",
       arguments: ["checkout", "3.10.0-7.0.dev"],
-      workingDirectoryPath: env.variables["dart_sdk_path"],
+      workingDirectoryPath: env.vars["dart_sdk_path"],
     ),
   ),
-  BuildStep(
+  /**
+   * gclient is a tool of google and is used in this context to download
+   * all dependencies of the Dart SDK.
+   */
+  Step(
     "Synchronize gclient dependencies",
+
     configure: (env) {
-      env.variables["gclient_script_file"] = path.join(
-        env.variables["depot_tools_path"],
-        "gclient" + (env.host.platform == SystemPlatform.windows ? ".bat" : ""),
+      env.vars["gclient_script_file"] = path.join(
+        env.vars["depot_tools_path"],
+        "gclient" + (env.host.platform == Platform.windows ? ".bat" : ""),
       );
     },
+
     condition: (env) => !File(
       path.join(env.workDirectoryPath, ".gclient_previous_sync_commits"),
     ).existsSync(),
-    command: (env) => BuildStepCommand(
-      program: env.variables["gclient_script_file"],
+
+    command: (env) => StepCommand(
+      program: env.vars["gclient_script_file"],
       arguments: ["sync"],
-      workingDirectoryPath: env.variables["dart_sdk_path"],
+      workingDirectoryPath: env.vars["dart_sdk_path"],
     ),
   ),
-  BuildStep(
+  Step(
     "Build the sdk for the target operating system",
     configure: (env) {
-      env.variables["dart_architecture"] = {
-        SystemProcessor.x86_64: "x64",
-        SystemProcessor.arm64: "arm64",
-        SystemProcessor.arm: "arm",
-        SystemProcessor.riscv64: "riscv64",
-        SystemProcessor.x86: "ia32",
+      env.vars["dart_architecture"] = {
+        Processor.x86_64: "x64",
+        Processor.arm64: "arm64",
       }[env.target.processor]!;
-      env.variables["dart_binaries_path"] = path.join(
-        env.variables["dart_sdk_path"],
+      env.vars["dart_binaries_path"] = path.join(
+        env.vars["dart_sdk_path"],
         "out",
-        "Product" +
-            (env.variables["dart_architecture"] as String).toUpperCase(),
+        "Product" + (env.vars["dart_architecture"] as String).toUpperCase(),
       );
-      env.variables["dart_dependency_python"] =
-          env.host.platform == SystemPlatform.windows
-          ? path.join(env.variables["depot_tools_path"], "python3.bat")
+      env.vars["dart_dependency_python"] = env.host.platform == Platform.windows
+          ? path.join(env.vars["depot_tools_path"], "python3.bat")
           : "python";
     },
-    condition: (env) =>
-        !Directory(env.variables["dart_binaries_path"]).existsSync(),
-    command: (env) => BuildStepCommand(
-      program: env.variables["dart_dependency_python"],
+    condition: (env) => !Directory(env.vars["dart_binaries_path"]).existsSync(),
+    command: (env) => StepCommand(
+      program: env.vars["dart_dependency_python"],
       arguments: [
-        "${env.variables["dart_sdk_path"]}/tools/build.py",
+        "${env.vars["dart_sdk_path"]}/tools/build.py",
         "--mode",
         "product",
         "--arch",
-        env.variables["dart_architecture"],
+        env.vars["dart_architecture"],
         "create_sdk",
       ],
-      workingDirectoryPath: env.variables["dart_sdk_path"],
+      workingDirectoryPath: env.vars["dart_sdk_path"],
     ),
   ),
-  BuildStep(
+  /**
+   * The simarm64 cross compilation tool is capable of compiling Dart code to
+   * arm64 systems. The downside is, it is inefficient and should only be used in debug.
+   * For production the android_arm64 & ios_arm64 tools are built.
+   */
+  Step(
     "Build simarm64 cross compilation gen snapshot tool",
     configure: (env) {
-      env.variables["product_simarm64_utils_path"] = path.join(
-        env.variables["dart_sdk_path"],
+      env.vars["product_simarm64_utils_path"] = path.join(
+        env.vars["dart_sdk_path"],
         "out",
         "ProductSIMARM64",
         "dart-sdk",
@@ -162,9 +188,9 @@ List<BuildStep> processSteps = [
       );
     },
     condition: (env) =>
-        !Directory(env.variables["product_simarm64_utils_path"]).existsSync(),
-    command: (env) => BuildStepCommand(
-      program: env.variables["dart_dependency_python"],
+        !Directory(env.vars["product_simarm64_utils_path"]).existsSync(),
+    command: (env) => StepCommand(
+      program: env.vars["dart_dependency_python"],
       arguments: [
         path.join(".", "tools", "build.py"),
         "--arch",
@@ -173,24 +199,28 @@ List<BuildStep> processSteps = [
         "product",
         "copy_gen_snapshot",
       ],
-      workingDirectoryPath: env.variables["dart_sdk_path"],
+      workingDirectoryPath: env.vars["dart_sdk_path"],
     ),
   ),
-  BuildStep(
+  /**
+   * Installation of only the important binaries and linux cross compilation tooling.
+   * If a binary isn't found it just ignore it.
+   */
+  Step(
     "Install platform sdk",
     condition: (env) => !Directory(
       path.join(env.installDirectoryPath, "bin", "utils"),
     ).existsSync(),
     run: (env) =>
-    install(
-      installPath: [env.installDirectoryPath],
-      rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
-      relativePath: ["bin"],
-      fileNames: ["dart", "dartaotruntime"],
-    ) &&
         install(
           installPath: [env.installDirectoryPath],
-          rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!, "dart-sdk"],
+          relativePath: ["bin"],
+          fileNames: ["dart", "dartaotruntime"],
+        ) &&
+        install(
+          installPath: [env.installDirectoryPath],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!, "dart-sdk"],
           relativePath: ["lib", "_internal"],
           directoryNames: ["vm", "vm_shared", "sdk_library_metadata"],
           fileNames: [
@@ -205,7 +235,7 @@ List<BuildStep> processSteps = [
         ) &&
         install(
           installPath: [env.installDirectoryPath],
-          rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!, "dart-sdk"],
           relativePath: ["lib"],
           directoryNames: [
             "_http",
@@ -226,7 +256,7 @@ List<BuildStep> processSteps = [
         ) &&
         install(
           installPath: [env.installDirectoryPath],
-          rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!, "dart-sdk"],
           relativePath: ["bin", "snapshots"],
           fileNames: [
             "analysis_server_aot.dart",
@@ -238,7 +268,7 @@ List<BuildStep> processSteps = [
         ) &&
         install(
           installPath: [env.installDirectoryPath, "bin", "utils"],
-          rootDirectoryPath: [env.variables["dart_binaries_path"]!],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!],
           fileNames: [
             "gen_snapshot_product",
             "gen_snapshot_product_linux_x64",
@@ -249,47 +279,141 @@ List<BuildStep> processSteps = [
         ) &&
         install(
           installPath: [env.installDirectoryPath],
-          rootDirectoryPath: [env.variables["dart_binaries_path"]!, "dart-sdk"],
+          rootDirectoryPath: [env.vars["dart_binaries_path"]!, "dart-sdk"],
           fileNames: ["version", "LICENSE"],
         ) &&
         (File(path.join(env.installDirectoryPath, "LICENSE"))
-          ..rename(path.join(env.installDirectoryPath, "dart.license")))
+              ..rename(path.join(env.installDirectoryPath, "dart.license")))
             .existsSync() &&
         (File(path.join(env.installDirectoryPath, "version"))
-          ..rename(path.join(env.installDirectoryPath, "dart.version")))
+              ..rename(path.join(env.installDirectoryPath, "dart.version")))
             .existsSync(),
     exitFail: false,
   ),
-  BuildStep(
+  /**
+   * This extra step occurs because we have to rename the simarm64 gen snapshot
+   * for the later tooling to work properly.
+   */
+  Step(
     "Install simarm64 cross compilation gen snapshot tool",
     configure: (env) {
       for (FileSystemEntity entity in Directory(
-        env.variables["product_simarm64_utils_path"],
+        env.vars["product_simarm64_utils_path"],
       ).listSync()) {
         if (!(entity is File)) continue;
 
         if (path.basenameWithoutExtension(entity.path) != "gen_snapshot")
           continue;
 
-        env.variables["simarm64_snapshot_path"] = path.join(
-          env.variables["product_simarm64_utils_path"],
+        env.vars["simarm64_snapshot_path"] = path.join(
+          env.vars["product_simarm64_utils_path"],
           path.basename(entity.path),
         );
       }
-      env.variables["executable_ending"] =
-          (env.target.platform == SystemPlatform.windows ? ".exe" : "");
+      env.vars["executable_ending"] = (env.target.platform == Platform.windows
+          ? ".exe"
+          : "");
     },
-    condition: (env) => !File(env.variables["simarm64_snapshot_path"]).existsSync(),
+    condition: (env) => !File(env.vars["simarm64_snapshot_path"]).existsSync(),
     run: (env) =>
-        (File(env.variables["simarm64_snapshot_path"])..copySync(
+        (File(env.vars["simarm64_snapshot_path"])..copySync(
               path.join(
                 env.installDirectoryPath,
                 "bin",
                 "utils",
-                "gen_snapshot_product_simarm64" +
-                    env.variables["executable_ending"],
+                "gen_snapshot_product_simarm64" + env.vars["executable_ending"],
               ),
             ))
             .existsSync(),
   ),
+
+  /**
+   * In order to build the gen_snapshot for android_arm64 we have to modify
+   * the build targets to allow the cross compilation tools.
+   */
+  Step(
+    "Add configs to runtime build gn",
+    configure: (env) {
+      env.vars["file_runtime"] = path.join(
+        env.vars["dart_sdk_path"],
+        "runtime",
+        "BUILD.gn",
+      );
+
+      env.vars["file_runtime_binaries"] = path.join(
+        env.vars["dart_sdk_path"],
+        "runtime",
+        "bin",
+        "BUILD.gn",
+      );
+
+      env.vars["file_runtime_config"] = path.join(
+        env.vars["dart_sdk_path"],
+        "runtime",
+        "configs.gni",
+      );
+
+      env.vars["file_sdk"] = path.join(env.vars["dart_sdk_path"], "BUILD.gn");
+    },
+
+    run: (env) {
+      RandomAccessFile runtimeFile = File(
+        env.vars["file_runtime"],
+      ).openSync(mode: FileMode.append);
+      runtimeFile.writeStringSync("""
+          config("dart_android_arm64_config") {
+            defines = [
+              "DART_TARGET_OS_ANDROID",
+              "TARGET_ARCH_ARM64",
+            ]
+          }
+          
+          config("dart_android_arm_config") {
+            defines = [
+              "DART_TARGET_OS_ANDROID",
+              "TARGET_ARCH_ARM",
+            ]
+          }
+          """);
+      runtimeFile.closeSync();
+
+      File runtimeBinariesFile = File(env.vars["file_runtime_binaries"]);
+
+      runtimeBinariesFile
+
+
+      return true;
+    },
+  ),
 ];
+
+
+void addContent(File file, String content, int level, String statement) {
+  int linePosition = 0;
+  int level = 0;
+  List<String> context = [];
+  String lastLine = "";
+  file.openRead()
+      .map(utf8.decode)
+      .transform(new LineSplitter())
+      .forEach((line) {
+    linePosition++;
+    int runePosition = 0;
+    for (int rune in line.runes) {
+      runePosition++;
+      String string = String.fromCharCode(rune);
+      if (string.contains("{")) {
+        context.add(line.substring(0, runePosition-1));
+        level++;
+      } else if (string.contains("}")) {
+        context.remove(context.last);
+        level--;
+      } else if (string.contains("[")) {
+        level++;
+      } else if (string.contains("]")) {
+        level--;
+      }
+    }
+
+  });
+}

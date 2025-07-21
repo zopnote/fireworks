@@ -16,8 +16,9 @@
  *
  */
 
-import 'package:modspec/build/environment.dart';
 
-Future<bool> buildModule(BuildEnvironment env) => env.execute([
-
-]);
+import 'package:modspec/build.dart';
+class CMakeStep extends Step {
+  CMakeStep(super.name);
+  
+}

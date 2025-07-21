@@ -15,9 +15,10 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'package:fireworks.cli/command/runner.dart';
 import 'package:fireworks_app/command/doctor.dart';
 import 'dart:core';
+
+import 'package:fireworks_app/runner.dart';
 
 Future<int> main(List<String> args) => execute(
   args,

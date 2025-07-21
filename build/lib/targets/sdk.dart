@@ -15,39 +15,38 @@
  *    A commercial license will be available at a later time for use in commercial products.
  */
 
-import 'package:fireworks.cli/build/environment.dart';
-import 'package:fireworks.cli/build/process.dart';
+import '../build.dart';
 import '../targets.dart';
 
-final List<BuildStep> processSteps = [
-  BuildStep(
+final List<Step> processSteps = [
+  Step(
     "Build high priority dependency artifacts",
     run: (env) async {
       final String vendorPath = "vendor";
 
 
-      final BuildConfig clangConfig = BuildConfig(
+      final clangConfig = Environment(
         "clang",
         installPath: [vendorPath],
-        buildType: env.buildType,
-        variables: env.variables,
+        config: env.config,
+        vars: env.vars,
         target: env.target
       );
-      final BuildConfig dartConfig = BuildConfig(
+      final dartConfig = Environment(
           "dart_sdk",
           installPath: [vendorPath],
-          buildType: env.buildType,
-          variables: env.variables,
+          config: env.config,
+          vars: env.vars,
           target: env.target
       );
-      final BuildConfig appConfig = BuildConfig(
+      final appConfig = Environment(
           "app",
           installPath: ["bin"],
-          buildType: env.buildType,
-          variables: {
+          config: env.config,
+          vars: {
             "dart_sdk_path": dartConfig.installDirectoryPath,
             "clang_path": clangConfig.installDirectoryPath
-          }..addAll(env.variables),
+          }..addAll(env.vars),
           target: env.target
       );
       bool result = false;

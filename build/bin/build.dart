@@ -17,11 +17,9 @@
 
 import 'dart:io';
 
-import 'package:fireworks.cli/build/environment.dart';
-import 'package:fireworks.cli/command/runner.dart';
-
-import 'package:fireworks.build/targets.dart';
-import '../../app/modspec.dart';
+import 'package:build/build.dart';
+import 'package:build/runner.dart';
+import 'package:build/targets.dart';
 
 Future<int> main(List<String> args) => execute(
   args,
@@ -44,8 +42,8 @@ Future<int> main(List<String> args) => execute(
     Flag(
       name: "config",
       description: "Build type configuration.",
-      value: BuildType.debug.name,
-      overview: BuildType.values.map((e) => e.name).toList(),
+      value: Config.debug.name,
+      overview: Config.values.map((e) => e.name).toList(),
     ),
     Flag(name: "list", description: "List all build targets."),
   ],
@@ -53,19 +51,19 @@ Future<int> main(List<String> args) => execute(
 
 /// Host target couples supported by the build scripts for building fireworks.
 final supportedCouples = {
-  System(SystemPlatform.windows, SystemProcessor.x86_64).string(): [
-    System(SystemPlatform.windows, SystemProcessor.x86_64).string(),
-    System(SystemPlatform.windows, SystemProcessor.arm64).string(),
+  System(Platform.windows, Processor.x86_64).string(): [
+    System(Platform.windows, Processor.x86_64).string(),
+    System(Platform.windows, Processor.arm64).string(),
   ],
-  System(SystemPlatform.windows, SystemProcessor.arm64).string(): [
-    System(SystemPlatform.windows, SystemProcessor.arm64).string(),
+  System(Platform.windows, Processor.arm64).string(): [
+    System(Platform.windows, Processor.arm64).string(),
   ],
-  System(SystemPlatform.linux, SystemProcessor.x86_64).string(): [
-    System(SystemPlatform.linux, SystemProcessor.x86_64).string(),
-    System(SystemPlatform.linux, SystemProcessor.arm64).string(),
+  System(Platform.linux, Processor.x86_64).string(): [
+    System(Platform.linux, Processor.x86_64).string(),
+    System(Platform.linux, Processor.arm64).string(),
   ],
-  System(SystemPlatform.macos, SystemProcessor.arm64).string(): [
-    System(SystemPlatform.macos, SystemProcessor.arm64).string(),
+  System(Platform.macos, Processor.arm64).string(): [
+    System(Platform.macos, Processor.arm64).string(),
   ],
 };
 
@@ -86,16 +84,16 @@ CommandRunner build = (data) async {
   }
 
   System? target = System.parseString(platformValue);
-  BuildType? buildType = BuildType.values.firstWhereOrNull(
+  Config? config = Config.values.firstWhereOrNull(
     (e) => e.name == configValue,
   );
-  if (target == null || buildType == null) {
+  if (target == null || config == null) {
     return CommandResponse(
       message:
           (target == null
               ? "The target flag value '$platformValue' is invalid.\n"
               : "") +
-          (buildType == null
+          (config == null
               ? "The build configuration flag value '$configValue' is invalid."
               : ""),
       error: true,
@@ -150,13 +148,13 @@ CommandRunner build = (data) async {
   if (verbose) {
     stdout.writeln("Execute build configuration and target build steps...");
   }
-  test();
+
   return CommandResponse(
-    error: !await BuildConfig(
+    error: !await Environment(
       data.arg,
       target: target,
-      buildType: buildType,
-      variables: {"build_version": 1.0},
+      config: config,
+      vars: {"build_version": 1.0},
     ).execute(targets[data.arg]!),
   );
 };

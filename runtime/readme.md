@@ -21,11 +21,13 @@ server and client side for easy multiplayer games.
 Cross-platform high efficient renderer abstracting vulkan, opengl and metal.
 Comes with global illumination, reflections and raytracing.
 ### Machine Learning ``vino`` 
-OpenVINO based framework to power token based models. Can be used 
+OpenVINO based framework to power token based models. Can be used for pretrained artificial intelligence. 
+Utilizes the systems GPU, NPU and CPU for processing. 
 ### Virtual Reality ``xvr``
-OpenXR vr systems
+OpenXR based framework for implementing virtual reality features.
 ### Input & Output ``io``
-As the name suggests keyboard, mouse and controller input.
+As the name suggests keyboard, mouse and controller input. It's about devices that should interact with the game.
+In headless mode the ``io`` module isn't available.
 ### Core ``core``
 **The core main module** provides the overall entry point and management of the
 entire runtime. It has to manage the resources, initialization, fragility and software architecture. On demand, it can be run
@@ -33,8 +35,7 @@ headless (without io).
 
 Core submodules:
 * ``math`` Math for physics, calculations, raytracing and casting or collisions.
-* ``platform`` Platform abstraction and information
-* ``assets`` Loader for assets on several platforms.
+* ``platform`` Platform abstraction, assets manager and information
 * ``system`` Subsystem for resource management. Threads and memory.
 * ``debug`` Debug library for better insights into the C code.
 * ``stdlog`` Log crucial information and communicate in headless mode with the user. Also supports stdin and stderr.
