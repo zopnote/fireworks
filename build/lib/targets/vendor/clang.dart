@@ -13,6 +13,7 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
 import 'dart:io' as io;
@@ -24,7 +25,7 @@ import '../../build.dart';
 final List<Step> processSteps = [
   Step(
     "Check for available programs",
-    run: (_) => ensurePrograms(["git", "cmake", "python"]),
+    run: (env) => env.ensurePrograms(["git", "cmake", "python"]),
   ),
   Step(
     "Clone repository",

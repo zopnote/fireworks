@@ -16,15 +16,11 @@
  *
  */
 
-
-
 import 'dart:async' as async;
 import 'dart:convert' as convert;
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
-
-
 
 /**
  * Representation of a command that can be executed as part of [BuildProcess];
@@ -50,18 +46,16 @@ final class Step {
   final bool spinner;
 
   const Step(
-      this.name, {
-        this.command,
-        this.run,
-        this.exitFail = true,
-        this.condition,
-        this.configure,
-        this.spinner = false,
-      });
+    this.name, {
+    this.command,
+    this.run,
+    this.exitFail = true,
+    this.condition,
+    this.configure,
+    this.spinner = false,
+  });
 
-  Future<bool> execute(final Environment env, {
-    String message = "",
-  }) async {
+  Future<bool> execute(final Environment env, {String message = ""}) async {
     ProcessSpinner? spinner;
     bool exitExecute(bool returnable) {
       if (spinner != null) {
@@ -71,9 +65,8 @@ final class Step {
       return returnable;
     }
 
-
     if (this.spinner) {
-      spinner = ProcessSpinner()..start(message);
+      spinner = ProcessSpinner(env)..start(message);
     } else {
       io.stdout.writeln(message);
     }
@@ -88,8 +81,8 @@ final class Step {
     final StepCommand command = this.command!(env);
     final String program = command.administrator
         ? io.Platform.isWindows
-        ? "powershell.exe"
-        : "sudo ${command.program}"
+              ? "powershell.exe"
+              : "sudo ${command.program}"
         : command.program;
 
     final List<String> arguments;
@@ -228,6 +221,12 @@ class Environment {
   final String name;
 
   /**
+   * How much spaces should appear for the stdout of this environment.
+   * Provides structure in deeper executions.
+   */
+  final int prefixSpace;
+
+  /**
    * Environment variables that get applied to process commands and are available in the entire configuration.
    */
   late final Map<String, dynamic> vars;
@@ -278,12 +277,8 @@ class Environment {
   /**
    * Temporal directory for files.
    */
-  String get workDirectoryPath => path.join(
-    outputDirectoryPath,
-    this.target.string(),
-    "targets-build",
-    this.name,
-  );
+  String get workDirectoryPath =>
+      path.join(outputDirectoryPath, this.target.string(), this.name);
 
   /**
    * Directory of the script run in this isolate.
@@ -293,14 +288,15 @@ class Environment {
       : path.dirname(io.Platform.script.path);
 
   Environment(
-      this.name, {
-        List<String> installPath = const [],
-        final System? target,
-        this.config = Config.debug,
-        final Map<String, dynamic>? vars,
-      }) : _installPath = installPath,
-        this.target = target ?? System.current(),
-        this.vars = vars != null ? ({}..addAll(vars)) : {};
+    this.name, {
+    List<String> installPath = const [],
+    final System? target,
+    this.config = Config.debug,
+    this.prefixSpace = 0,
+    final Map<String, dynamic>? vars,
+  }) : _installPath = installPath,
+       this.target = target ?? System.current(),
+       this.vars = vars != null ? ({}..addAll(vars)) : {};
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> toJsonMap(Map<String, dynamic> map) {
@@ -385,7 +381,8 @@ class Environment {
       try {
         const String spaceCharacter = " ";
         String targetName = "⟮" + this.name + "⟯" + spaceCharacter;
-        String message = targetName + "⟮${i + 1}⁄${steps.length}⟯" + spaceCharacter;
+        String message =
+            targetName + "⟮${i + 1}⁄${steps.length}⟯" + spaceCharacter;
 
         if (step.configure != null) {
           await step.configure!(this);
@@ -396,11 +393,7 @@ class Environment {
             continue;
           }
         }
-        result = await step.execute(
-          this,
-          message: message + step.name,
-        );
-
+        result = await step.execute(this, message: message + step.name);
       } catch (e) {
         io.stderr.writeln(
           "\nError while executing step '${step.name}' (${i + 1} out of ${steps.length}).",
@@ -415,7 +408,7 @@ class Environment {
           "wasCritical": step.exitFail && !result,
           if (step.command != null)
             "command":
-            step.command!(this).program +
+                step.command!(this).program +
                 " " +
                 step.command!(this).arguments.join(" "),
         }..addAll(toJson()),
@@ -426,6 +419,48 @@ class Environment {
       }
     }
     return true;
+  }
+
+  bool ensurePrograms(List<String> requiredPrograms) {
+    final String executableExtension = io.Platform.isWindows ? ".exe" : "";
+    final List<String> pathVariableEntries =
+        io.Platform.environment["PATH"]?.split(
+          io.Platform.isWindows ? ";" : ":",
+        ) ??
+        [];
+
+    if (requiredPrograms.isEmpty) return true;
+
+    bool isAllFound = true;
+    for (String program in requiredPrograms) {
+      bool found = false;
+      for (String pathVariableEntry in pathVariableEntries) {
+        final io.File programFile = io.File(
+          path.join(pathVariableEntry, "$program$executableExtension"),
+        );
+        if (programFile.existsSync()) {
+          found = true;
+        }
+      }
+
+      if (!found) {
+        final result = io.Process.runSync(
+          program,
+          [],
+          runInShell: true,
+          includeParentEnvironment: true,
+        );
+        if (result.exitCode == 0) {
+          found = true;
+        }
+      }
+
+      if (!found) {
+        io.stderr.writeln("$program" + " ✖  ");
+        isAllFound = false;
+      }
+    }
+    return isAllFound;
   }
 }
 
@@ -489,45 +524,6 @@ bool install({
   }
 }
 
-bool ensurePrograms(List<String> requiredPrograms) {
-  final String executableExtension = io.Platform.isWindows ? ".exe" : "";
-  final List<String> pathVariableEntries =
-      io.Platform.environment["PATH"]?.split(io.Platform.isWindows ? ";" : ":") ?? [];
-
-  if (requiredPrograms.isEmpty) return true;
-
-  bool isAllFound = true;
-  for (String program in requiredPrograms) {
-    bool found = false;
-    for (String pathVariableEntry in pathVariableEntries) {
-      final io.File programFile = io.File(
-        path.join(pathVariableEntry, "$program$executableExtension"),
-      );
-      if (programFile.existsSync()) {
-        found = true;
-      }
-    }
-
-    if (!found) {
-      final result = io.Process.runSync(
-        program,
-        [],
-        runInShell: true,
-        includeParentEnvironment: true,
-      );
-      if (result.exitCode == 0) {
-        found = true;
-      }
-    }
-
-    if (!found) {
-      io.stderr.write("$program" + " ✖  ");
-      isAllFound = false;
-    }
-  }
-  return isAllFound;
-}
-
 /**
  * Representing a specific operating system.
  */
@@ -567,13 +563,10 @@ final class System {
   factory System.current() {
     final String system = io.Platform.version.split("\"")[1];
     return System(
-      Platform.values.firstWhere(
-            (i) => i.name == system.split("_").first,
-      ),
-      {
-        "x64": Processor.x86_64,
-        "arm64": Processor.arm64,
-      }[system.split("_").last]!,
+      Platform.values.firstWhere((i) => i.name == system.split("_").first),
+      {"x64": Processor.x86_64, "arm64": Processor.arm64}[system
+          .split("_")
+          .last]!,
     );
   }
 
@@ -585,8 +578,10 @@ final class System {
   }
 }
 
-
 class ProcessSpinner {
+  final Environment env;
+  ProcessSpinner(this.env);
+
   static const List<String> _frames = [
     '⠋',
     '⠙',
@@ -632,4 +627,3 @@ Future waitWhile(bool test(), [Duration pollInterval = Duration.zero]) {
   check();
   return completer.future;
 }
-

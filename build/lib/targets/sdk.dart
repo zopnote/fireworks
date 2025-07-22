@@ -13,6 +13,7 @@
  *
  * 2. Commercial License:
  *    A commercial license will be available at a later time for use in commercial products.
+ *
  */
 
 import '../build.dart';
@@ -30,14 +31,16 @@ final List<Step> processSteps = [
         installPath: [vendorPath],
         config: env.config,
         vars: env.vars,
-        target: env.target
+        target: env.target,
+        prefixSpace: 4
       );
       final dartConfig = Environment(
           "dart_sdk",
           installPath: [vendorPath],
           config: env.config,
           vars: env.vars,
-          target: env.target
+          target: env.target,
+          prefixSpace: 4
       );
       final appConfig = Environment(
           "app",
@@ -47,7 +50,8 @@ final List<Step> processSteps = [
             "dart_sdk_path": dartConfig.installDirectoryPath,
             "clang_path": clangConfig.installDirectoryPath
           }..addAll(env.vars),
-          target: env.target
+          target: env.target,
+          prefixSpace: 4
       );
       bool result = false;
       result = await clangConfig.execute(targets["clang"]!);
