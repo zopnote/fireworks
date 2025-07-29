@@ -522,66 +522,59 @@ Future<bool> injectGNContent({
   List<String> block = const [],
   InjectAt injectable = InjectAt.blockEnd,
 }) async {
-  final fileContentStream = file.openRead().map(utf8.decode);
-  final lines = fileContentStream.transform(LineSplitter());
+  final fileContent = await file.readAsString();
 
   int position = 0;
   final List<String> context = [];
-  int lastChange = 0;
 
+  String current = "";
   Future<void> processFile() async {
-    await for (String line in lines) {
-      stdout.write("\n${context.length} -> $line");
-      position += utf8.encode("\n").lengthInBytes;
+    for (final String char in fileContent.codeUnits.map(
+      (e) => utf8.decode([e]),
+    )) {
+      current += char;
+      position += utf8.encode(char).lengthInBytes;
 
-      for (final String char in line.codeUnits.map((e) => utf8.decode([e]))) {
-        position += utf8.encode(char).lengthInBytes;
+      final bool blockOpenBrace = char.contains('{');
+      final bool blockCloseBrace = char.contains('}');
 
-        final bool blockOpenBrace = char.contains('{') || char.contains('[');
-        final bool blockCloseBrace = char.contains('}') || char.contains(']');
+      if (blockOpenBrace) {
+        context.add(current);
+        current = "";
+      }
 
-        if (blockOpenBrace) {
-          final RandomAccessFile readable = file.openSync()
-            ..setPositionSync(lastChange);
-          context.add(
-            String.fromCharCodes(readable.readSync(position - lastChange)),
-          );
-          lastChange = position;
+      if (blockCloseBrace && context.isNotEmpty) {
+        context.removeLast();
+        current = "";
+      }
+
+      for (int i = 0; i < context.length; i++) {
+        if (context.length != block.length ||
+            !context.last.contains(block.last) ||
+            !context[i].contains(block[i])) {
+          break;
         }
 
-        if (blockCloseBrace && context.isNotEmpty) {
-          context.removeLast();
-          lastChange = position;
-        }
-
-        for (int i = 0; i < context.length; i++) {
-          if (context.length != block.length ||
-              !context.last.contains(block.last) ||
-              !context[i].contains(block[i])) {
-            break;
-          }
-
-          if (i == context.length - 1) {
-            if (blockOpenBrace && injectable == InjectAt.blockStart) {
+        if (i == context.length - 1) {
+          if (blockOpenBrace && (injectable == InjectAt.blockStart)) return;
+          else if (blockCloseBrace) {
+            if (injectable == InjectAt.afterBlock) return;
+            else if (injectable == InjectAt.blockEnd) {
+              position -= utf8.encode(char).lengthInBytes;
               return;
-            } else if (blockCloseBrace) {
-              if (injectable == InjectAt.afterBlock) {
-                return;
-              } else if (injectable == InjectAt.blockEnd) {
-                position -= utf8.encode(char).lengthInBytes;
-
-                return;
-              }
-            } else {
-              continue;
             }
-            break;
-          }
+          } else continue;
         }
       }
     }
   }
 
   await processFile();
+  if (position == file.lengthSync() && context.isEmpty) {
+    return false;
+  }
+  final output = File("./${path.basename(file.path)}")..writeAsStringSync(fileContent);
+  output.openSync(mode: FileMode.writeOnlyAppend)..setPositionSync(position)..writeStringSync(content);
+  print("\nposition: $position, file length: ${file.lengthSync()}, context: $context\n");
   return true;
 }
