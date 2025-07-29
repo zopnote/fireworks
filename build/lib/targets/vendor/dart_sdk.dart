@@ -48,6 +48,17 @@ List<Step> processSteps = [
     ),
     exitFail: false,
   ),
+  Step(
+    "Set repository url",
+    run: (env) {
+      final dartConfig = File(path.join(env.vars["depot_tools_path"], "fetch_configs", "dart.py"));
+      final String dartConfigContent = dartConfig.readAsStringSync();
+      dartConfig.deleteSync();
+      dartConfig.createSync();
+      dartConfig.writeAsStringSync(dartConfigContent.replaceAll("https://dart.googlesource.com/sdk.git", "https://github.com/zopnote/dart-sdk.git"));
+      return true;
+    },
+  ),
   /**
    * The Dart SDK depend on the chromium toolchain and has to be fetched
    * with the depot_tools fetch tool. We set DEPOT_TOOLS_WIN_TOOLCHAIN,
@@ -62,7 +73,7 @@ List<Step> processSteps = [
       }
     },
     condition: (env) => !File(
-      path.join(env.workDirectoryPath, ".dart-process-done"),
+      path.join(env.workDirectoryPath, ".${env.name}-process-done"),
     ).existsSync(),
     command: (env) => StepCommand(
       program: path.join(env.vars["depot_tools_path"], "fetch"),
@@ -100,22 +111,6 @@ List<Step> processSteps = [
     ),
   ),
 
-  /**
-   * We checkout the desired, current Dart SDK version tag to stand stable in versioning.
-   */
-  Step(
-    "Switch dart version tag",
-
-    condition: (env) => !File(
-      path.join(env.workDirectoryPath, ".gclient_previous_sync_commits"),
-    ).existsSync(),
-
-    command: (env) => StepCommand(
-      program: "git",
-      arguments: ["checkout", "3.10.0-7.0.dev"],
-      workingDirectoryPath: env.vars["dart_sdk_path"],
-    ),
-  ),
   /**
    * gclient is a tool of google and is used in this context to download
    * all dependencies of the Dart SDK.
@@ -556,14 +551,17 @@ Future<bool> injectGNContent({
         }
 
         if (i == context.length - 1) {
-          if (blockOpenBrace && (injectable == InjectAt.blockStart)) return;
+          if (blockOpenBrace && (injectable == InjectAt.blockStart))
+            return;
           else if (blockCloseBrace) {
-            if (injectable == InjectAt.afterBlock) return;
+            if (injectable == InjectAt.afterBlock)
+              return;
             else if (injectable == InjectAt.blockEnd) {
               position -= utf8.encode(char).lengthInBytes;
               return;
             }
-          } else continue;
+          } else
+            continue;
         }
       }
     }
@@ -573,8 +571,13 @@ Future<bool> injectGNContent({
   if (position == file.lengthSync() && context.isEmpty) {
     return false;
   }
-  final output = File("./${path.basename(file.path)}")..writeAsStringSync(fileContent);
-  output.openSync(mode: FileMode.writeOnlyAppend)..setPositionSync(position)..writeStringSync(content);
-  print("\nposition: $position, file length: ${file.lengthSync()}, context: $context\n");
+  final output = File("./${path.basename(file.path)}")
+    ..writeAsStringSync(fileContent);
+  output.openSync(mode: FileMode.writeOnlyAppend)
+    ..setPositionSync(position)
+    ..writeStringSync(content);
+  print(
+    "\nposition: $position, file length: ${file.lengthSync()}, context: $context\n",
+  );
   return true;
 }

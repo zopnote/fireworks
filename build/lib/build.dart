@@ -88,7 +88,7 @@ final class Step {
     final List<String> arguments;
     final String doneFilePath = path.join(
       command.workingDirectoryPath ?? env.workDirectoryPath,
-      ".dart-process-done",
+      ".${env.name}-process-done",
     );
     if (command.administrator && io.Platform.isWindows) {
       arguments = [
