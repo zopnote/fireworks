@@ -30,6 +30,10 @@ Future<int> main(List<String> args) => execute(
   ),
   globalFlags: [
     Flag(
+      name: "force",
+      description: "Ignores the condition of all steps and forces the execution.",
+    ),
+    Flag(
       name: "verbose",
       description: "Prints extra information about the process.",
     ),
@@ -120,6 +124,11 @@ CommandRunner build = (data) async {
       ? false
       : true;
 
+  final bool force =
+  data.flags.firstWhereOrNull((e) => e.name == "force") == null
+      ? false
+      : true;
+
   final bool list = data.flags.firstWhereOrNull((e) => e.name == "list") == null
       ? false
       : true;
@@ -155,6 +164,6 @@ CommandRunner build = (data) async {
       target: target,
       config: config,
       vars: {"build_version": 1.0},
-    ).execute(targets[data.arg]!),
+    ).execute(targets[data.arg]!, forced: force),
   );
 };

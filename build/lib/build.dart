@@ -133,7 +133,11 @@ final class Step {
     );
     if (command.administrator)
       await waitWhile(() {
-        return io.File(doneFilePath).existsSync();
+        if (io.File(doneFilePath).existsSync()) {
+          io.File(doneFilePath).deleteSync();
+          return true;
+        }
+        return false;
       }, Duration(seconds: 1));
 
     if (!this.spinner) {
@@ -324,7 +328,11 @@ class Environment {
     return toJsonMap(vars);
   }
 
-  Future<bool> execute(List<Step> steps, {String suffix = ""}) async {
+  Future<bool> execute(
+    final List<Step> steps, {
+    final String suffix = "",
+    final bool forced = false,
+  }) async {
     if (!io.Directory(this.outputDirectoryPath).existsSync()) {
       io.Directory(this.outputDirectoryPath).createSync(recursive: true);
     }
@@ -387,7 +395,7 @@ class Environment {
         if (step.configure != null) {
           await step.configure!(this);
         }
-        if (step.condition != null) {
+        if (step.condition != null && !forced) {
           if (!await step.condition!(this)) {
             io.stdout.writeln(message + "Skipped");
             continue;
@@ -485,7 +493,6 @@ bool install({
           continue;
         }
         final String filePath = path.join(
-          path.joinAll(installPath),
           path.joinAll(installPath),
           path.relative(entity.path, from: path.joinAll(rootDirectoryPath)),
         );
